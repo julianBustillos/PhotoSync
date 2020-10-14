@@ -2,6 +2,8 @@
 
 #include <QtWidgets/QMainWindow>
 #include "ui_PhotoSync.h"
+#include "FileManager.h"
+
 
 class PhotoSync : public QMainWindow
 {
@@ -10,6 +12,11 @@ class PhotoSync : public QMainWindow
 public:
     PhotoSync(QWidget *parent = Q_NULLPTR);
 
+private :
+    void askImportFolder();
+    void askExportFolder();
+
 private:
-    Ui::PhotoSyncClass ui;
+    Ui::PhotoSyncClass m_ui;
+    FileManager m_fileManager;
 };

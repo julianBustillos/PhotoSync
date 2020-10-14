@@ -1,10 +1,11 @@
 #include "PhotoSync.h"
 #include <QtWidgets/QApplication>
 
+
 int main(int argc, char *argv[])
 {
-    QApplication a(argc, argv);
-    PhotoSync w;
-    w.show();
-    return a.exec();
+    QApplication app(argc, argv);
+    PhotoSync window;
+    window.show();
+    return app.exec();
 }
