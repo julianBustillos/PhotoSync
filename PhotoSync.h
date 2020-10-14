@@ -15,8 +15,8 @@ public:
 private :
     void askImportFolder();
     void askExportFolder();
+    void run();
 
 private:
     Ui::PhotoSyncClass m_ui;
-    FileManager m_fileManager;
 };

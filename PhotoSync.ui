@@ -24,7 +24,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>Close</string>
+     <string>Exit</string>
     </property>
    </widget>
    <widget class="QPushButton" name="positivePushButton">
