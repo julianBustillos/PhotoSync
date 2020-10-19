@@ -44,9 +44,21 @@
     <ClCompile Include="FileManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="FileData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="easyexif\exif.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FileManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FileData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="easyexif\exif.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

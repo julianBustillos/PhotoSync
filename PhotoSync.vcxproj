@@ -89,11 +89,15 @@
     <QtRcc Include="PhotoSync.qrc" />
     <QtUic Include="PhotoSync.ui" />
     <QtMoc Include="PhotoSync.h" />
+    <ClCompile Include="easyexif\exif.cpp" />
+    <ClCompile Include="FileData.cpp" />
     <ClCompile Include="FileManager.cpp" />
     <ClCompile Include="PhotoSync.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="easyexif\exif.h" />
+    <ClInclude Include="FileData.h" />
     <ClInclude Include="FileManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

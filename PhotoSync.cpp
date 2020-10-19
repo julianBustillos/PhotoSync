@@ -1,6 +1,5 @@
 #include "PhotoSync.h"
-#include <QtWidgets\QFileDialog>
-#include <QtWidgets\QMessageBox.h>
+#include <QFileDialog>
 
 
 PhotoSync::PhotoSync(QWidget *parent)
@@ -29,26 +28,9 @@ void PhotoSync::askExportFolder()
 
 void PhotoSync::run()
 {
-    if (m_ui.importEdit->text().isEmpty()) {
-        QMessageBox::warning(this, "Path error", "Import path is empty !");
-        return;
-    }
-    if (m_ui.exportEdit->text().isEmpty()) {
-        QMessageBox::warning(this, "Path error", "Export path is empty !");
-        return;
-    }
-
-    if (!QDir(m_ui.importEdit->text()).exists()) {
-        QMessageBox::warning(this, "Path error", "Import path : \"" + m_ui.importEdit->text() + "\" not found !");
-        return;
-    }
-    if (!QDir(m_ui.exportEdit->text()).exists()) {
-        QMessageBox::warning(this, "Path error", "Export path : \"" + m_ui.exportEdit->text() + "\" not found !");
-        return;
-    }
-    
-    FileManager fileManager(m_ui);
+    FileManager fileManager(this, m_ui);
     fileManager.run();
 
     //Todo check errors ??
+    //TODO check errors ??
 }
