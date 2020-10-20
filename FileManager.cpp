@@ -9,7 +9,7 @@
 FileManager::FileManager(QWidget *parent, Ui::PhotoSyncClass &ui) :
     m_parent(parent), m_ui(ui)
 {
-    m_extensions << "*.jpg" << "*.png";
+    m_extensions << "*.jpg";
 }
 
 FileManager::~FileManager()
