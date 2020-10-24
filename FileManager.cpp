@@ -5,11 +5,17 @@
 #include <QCryptographicHash>
 #include "easyexif\exif.h"
 
+extern "C"
+{
+#include <libavformat/avformat.h>
+#include <libavutil/dict.h>
+}
+
 
 FileManager::FileManager(QWidget *parent, Ui::PhotoSyncClass &ui) :
     m_parent(parent), m_ui(ui)
 {
-    m_extensions << "*.jpg";
+    m_extensions << "*.jpg" << "*.mp4";
 }
 
 FileManager::~FileManager()
@@ -64,7 +70,20 @@ Date FileManager::getDate(const QFileInfo & fileInfo)
                 return Date(std::stoi(exifInfo.DateTime.substr(0, 4)), std::stoi(exifInfo.DateTime.substr(5, 2)));
             }
         }
+    }
+    else if (fileInfo.suffix().compare("mp4", Qt::CaseInsensitive) == 0) {
+        AVFormatContext *fmt_ctx = NULL;
+        AVDictionaryEntry *tag = NULL;
 
+        int ret = avformat_open_input(&fmt_ctx, fileInfo.absoluteFilePath().toLocal8Bit().data(), NULL, NULL);
+        if (ret == 0) {
+            tag = av_dict_get(fmt_ctx->metadata, "creation_time", tag, AV_DICT_IGNORE_SUFFIX);
+            if (tag) {
+                std::string value = tag->value;
+                return Date(std::stoi(value.substr(0, 4)), std::stoi(value.substr(5, 2)));
+            }
+        }
+        avformat_close_input(&fmt_ctx);
     }
 
     return Date();
