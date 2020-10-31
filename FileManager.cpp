@@ -24,10 +24,16 @@ FileManager::~FileManager()
 
 void FileManager::run()
 {
+    m_ui.progressBar->setValue(0);
+    m_ui.progressBar->setMaximum(100);
+
     if (checkDir()) {
         m_existingFiles.clear();
         m_exportDirectories.clear();
         m_exportFiles.clear();
+
+        m_ui.textEditOutput->append("FROM : " + m_ui.importEdit->text());
+        m_ui.textEditOutput->append("TO   : " + m_ui.exportEdit->text());
 
         buildExistingFileData();
         buildImportFileData();
@@ -100,6 +106,7 @@ void FileManager::buildExistingFileData()
 
 void FileManager::buildImportFileData()
 {
+    int duplicateCount = 0;
     QDirIterator it(m_ui.importEdit->text(), m_extensions, QDir::Files, QDirIterator::Subdirectories);
     while (it.hasNext()) {
         QFileInfo fileInfo(it.next());
@@ -137,7 +144,18 @@ void FileManager::buildImportFileData()
             m_exportDirectories.insert(date);
             m_exportFiles.emplace_back(date, fileInfo.filePath());
         }
+        else
+            duplicateCount++;
     }
+
+    size_t exportSize = m_exportFiles.size();
+    if (exportSize == 0)
+        m_ui.progressBar->setValue(100);
+    else
+        m_ui.progressBar->setMaximum(exportSize);
+
+    if (duplicateCount > 0)
+        m_ui.textEditOutput->append("Found " + QString::number(duplicateCount) + (duplicateCount > 1 ? " already existing files." : "already existing file."));
 }
 
 void FileManager::exportFiles()
@@ -159,5 +177,8 @@ void FileManager::exportFiles()
         }
 
         QFile::copy(importFileInfo.filePath(), exportFileInfo.filePath());
+        m_ui.progressBar->setValue(m_ui.progressBar->value() + 1);
     }
+
+    m_ui.textEditOutput->append(QString::number(m_exportFiles.size()) + (m_exportFiles.size() > 1 ? " files exported." : " file exported."));
 }

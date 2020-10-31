@@ -6,6 +6,7 @@ PhotoSync::PhotoSync(QWidget *parent)
     : QMainWindow(parent)
 {
     m_ui.setupUi(this);
+    m_ui.progressBar->setValue(0);
     QObject::connect(m_ui.importToolButton, &QToolButton::clicked, this, &PhotoSync::askImportFolder);
     QObject::connect(m_ui.exportToolButton, &QToolButton::clicked, this, &PhotoSync::askExportFolder);
     QObject::connect(m_ui.positivePushButton, &QToolButton::clicked, this, &PhotoSync::run);
@@ -31,6 +32,6 @@ void PhotoSync::run()
     FileManager fileManager(this, m_ui);
     fileManager.run();
 
-    //Todo check errors ??
+    //TODO manage exceptions when drive is disconnected ?
     //TODO check errors ??
 }
