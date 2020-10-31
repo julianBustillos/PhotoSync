@@ -28,16 +28,23 @@ void FileManager::run()
     m_ui.progressBar->setMaximum(100);
 
     if (checkDir()) {
+        std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
+        m_ui.textEditOutput->append("SYNC STARTED !");
+        m_ui.textEditOutput->append("FROM : " + m_ui.importEdit->text());
+        m_ui.textEditOutput->append("TO   : " + m_ui.exportEdit->text());
+
         m_existingFiles.clear();
         m_exportDirectories.clear();
         m_exportFiles.clear();
 
-        m_ui.textEditOutput->append("FROM : " + m_ui.importEdit->text());
-        m_ui.textEditOutput->append("TO   : " + m_ui.exportEdit->text());
-
         buildExistingFileData();
         buildImportFileData();
         exportFiles();
+
+        std::chrono::steady_clock::time_point endTime = std::chrono::steady_clock::now();
+        printElapsedTime(startTime, endTime);
+
+        m_ui.textEditOutput->append("SYNC ENDED !");
     }
 }
 
@@ -155,7 +162,7 @@ void FileManager::buildImportFileData()
         m_ui.progressBar->setMaximum(exportSize);
 
     if (duplicateCount > 0)
-        m_ui.textEditOutput->append("Found " + QString::number(duplicateCount) + (duplicateCount > 1 ? " already existing files." : "already existing file."));
+        m_ui.textEditOutput->append("Found " + QString::number(duplicateCount) + (duplicateCount > 1 ? " already existing files." : " already existing file."));
 }
 
 void FileManager::exportFiles()
@@ -181,4 +188,25 @@ void FileManager::exportFiles()
     }
 
     m_ui.textEditOutput->append(QString::number(m_exportFiles.size()) + (m_exportFiles.size() > 1 ? " files exported." : " file exported."));
+}
+
+void FileManager::printElapsedTime(std::chrono::steady_clock::time_point start, std::chrono::steady_clock::time_point end)
+{
+    int elapsedTime = (int)std::round(std::chrono::duration_cast<std::chrono::seconds>(end - start).count());
+    int h = 0, m = 0, s = 0;
+
+    if (elapsedTime >= 3600) {
+        h = elapsedTime / 3600;
+        elapsedTime -= h * 3600;
+    }
+
+    if (elapsedTime >= 60) {
+        m = elapsedTime / 60;
+        elapsedTime -= s * 60;
+    }
+
+    s = elapsedTime;
+
+    QString timeToPrint = QString::number(h).rightJustified(2, '0') + ":" + QString::number(m).rightJustified(2, '0') + ":" + QString::number(s).rightJustified(2, '0');
+    m_ui.textEditOutput->append("Elapsed time : " + timeToPrint);
 }

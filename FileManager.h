@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <vector>
 #include <set>
+#include <chrono>
 #include "FileData.h"
 
 
@@ -20,6 +21,7 @@ private:
     void buildExistingFileData();
     void buildImportFileData();
     void exportFiles();
+    void printElapsedTime(std::chrono::steady_clock::time_point start, std::chrono::steady_clock::time_point end);
 
 private:
     QWidget *m_parent;
