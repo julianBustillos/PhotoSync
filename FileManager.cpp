@@ -37,9 +37,13 @@ void FileManager::run()
         m_exportDirectories.clear();
         m_exportFiles.clear();
 
+        m_importErrors = 0;
+        m_exportErrors = 0;
+
         buildExistingFileData();
         buildImportFileData();
         exportFiles();
+        printErrors();
 
         std::chrono::steady_clock::time_point endTime = std::chrono::steady_clock::now();
         printElapsedTime(startTime, endTime);
@@ -71,8 +75,10 @@ bool FileManager::checkDir()
     return true;
 }
 
-Date FileManager::getDate(const QFileInfo & fileInfo)
+bool FileManager::getDate(const QFileInfo & fileInfo, Date &date)
 {
+    bool readError = false;
+
     if (fileInfo.suffix().compare("jpg", Qt::CaseInsensitive) == 0) {
         easyexif::EXIFInfo exifInfo;
         QFile file(fileInfo.absoluteFilePath());
@@ -80,8 +86,13 @@ Date FileManager::getDate(const QFileInfo & fileInfo)
             QByteArray fileData = file.readAll();
             int parsingResult = exifInfo.parseFrom((const unsigned char *)fileData.constData(), fileData.size());
             if (parsingResult == PARSE_EXIF_SUCCESS) {
-                return Date(std::stoi(exifInfo.DateTime.substr(0, 4)), std::stoi(exifInfo.DateTime.substr(5, 2)));
+                date.m_year = std::stoi(exifInfo.DateTime.substr(0, 4));
+                date.m_month = std::stoi(exifInfo.DateTime.substr(5, 2));
             }
+            file.close();
+        }
+        else {
+            readError = true;
         }
     }
     else if (fileInfo.suffix().compare("mp4", Qt::CaseInsensitive) == 0) {
@@ -93,13 +104,21 @@ Date FileManager::getDate(const QFileInfo & fileInfo)
             tag = av_dict_get(fmt_ctx->metadata, "creation_time", tag, AV_DICT_IGNORE_SUFFIX);
             if (tag) {
                 std::string value = tag->value;
-                return Date(std::stoi(value.substr(0, 4)), std::stoi(value.substr(5, 2)));
+                date.m_year = std::stoi(value.substr(0, 4));
+                date.m_month = std::stoi(value.substr(5, 2));
             }
+        }
+        else {
+            readError = true;
         }
         avformat_close_input(&fmt_ctx);
     }
+    else {
+        date.m_year = -1;
+        date.m_month = -1;
+    }
 
-    return Date();
+    return !readError;
 }
 
 void FileManager::buildExistingFileData()
@@ -123,20 +142,25 @@ void FileManager::buildImportFileData()
         if (filesIt != m_existingFiles.end()) {
             QCryptographicHash hash(QCryptographicHash::Md5);
             QFile newFile(fileInfo.filePath());
-            if (!newFile.open(QIODevice::ReadOnly)) 
+            if (!newFile.open(QIODevice::ReadOnly)) {
+                m_importErrors++;
                 continue;
+            }
             hash.addData(newFile.readAll());
             QByteArray newFileChecksum = hash.result();
 
             for (auto &fileData : filesIt->second) {
                 if (fileData.m_checksum.isEmpty()) {
                     QFile existingFile(fileData.m_path);
-                    if (!existingFile.open(QIODevice::ReadOnly))
+                    if (!existingFile.open(QIODevice::ReadOnly)) {
+                        m_exportErrors++;
                         continue;
+                    }
 
                     hash.reset();
                     hash.addData(existingFile.readAll());
                     fileData.m_checksum = hash.result();
+                    existingFile.close();
                 }
                 
                 if (newFileChecksum == fileData.m_checksum) {
@@ -144,10 +168,15 @@ void FileManager::buildImportFileData()
                     break;
                 }
             }
+            newFile.close();
         }
 
         if (copyFile) {
-            Date date = getDate(fileInfo);
+            Date date;
+            if (!getDate(fileInfo, date)) {
+                m_importErrors++;
+                continue;
+            }
             m_exportDirectories.insert(date);
             m_exportFiles.emplace_back(date, fileInfo.filePath());
         }
@@ -183,11 +212,24 @@ void FileManager::exportFiles()
             exportFileInfo.setFile(fileName + "_" + QString::number(++count));
         }
 
-        QFile::copy(importFileInfo.filePath(), exportFileInfo.filePath());
+        bool copyResult = QFile::copy(importFileInfo.filePath(), exportFileInfo.filePath());
+        if (!copyResult)
+            m_importErrors++;
         m_ui.progressBar->setValue(m_ui.progressBar->value() + 1);
     }
 
     m_ui.textEditOutput->append(QString::number(m_exportFiles.size()) + (m_exportFiles.size() > 1 ? " files exported." : " file exported."));
+}
+
+void FileManager::printErrors()
+{
+    if (m_exportErrors > 0) {
+        m_ui.textEditOutput->append("ERROR : " + QString::number(m_exportErrors) + ((m_exportErrors > 1) ? " files in export directory could not be read !" : " file in export directory could not be read !"));
+    }
+
+    if (m_importErrors > 0) {
+        m_ui.textEditOutput->append("ERROR : " + QString::number(m_importErrors) + ((m_importErrors > 1) ? " files in import directory could not be read !" : " file in import directory could not be read !"));
+    }
 }
 
 void FileManager::printElapsedTime(std::chrono::steady_clock::time_point start, std::chrono::steady_clock::time_point end)

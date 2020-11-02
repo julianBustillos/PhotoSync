@@ -8,7 +8,6 @@ struct Date {
     int m_month;
 
     Date() : m_year(0), m_month(0) {};
-    Date(int year, int month) : m_year(year), m_month(month) {};
     QString toQString() const;
 };
 
