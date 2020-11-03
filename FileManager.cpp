@@ -37,13 +37,14 @@ void FileManager::run()
         m_exportDirectories.clear();
         m_exportFiles.clear();
 
+        m_copyCount = 0;
         m_importErrors = 0;
         m_exportErrors = 0;
 
         buildExistingFileData();
         buildImportFileData();
         exportFiles();
-        printErrors();
+        printStats();
 
         std::chrono::steady_clock::time_point endTime = std::chrono::steady_clock::now();
         printElapsedTime(startTime, endTime);
@@ -213,16 +214,19 @@ void FileManager::exportFiles()
         }
 
         bool copyResult = QFile::copy(importFileInfo.filePath(), exportFileInfo.filePath());
-        if (!copyResult)
+        if (copyResult)
+            m_copyCount++;
+        else
             m_importErrors++;
         m_ui.progressBar->setValue(m_ui.progressBar->value() + 1);
     }
 
-    m_ui.textEditOutput->append(QString::number(m_exportFiles.size()) + (m_exportFiles.size() > 1 ? " files exported." : " file exported."));
 }
 
-void FileManager::printErrors()
+void FileManager::printStats()
 {
+    m_ui.textEditOutput->append(QString::number(m_copyCount) + (m_copyCount > 1 ? " files copied." : " file copied."));
+
     if (m_exportErrors > 0) {
         m_ui.textEditOutput->append("ERROR : " + QString::number(m_exportErrors) + ((m_exportErrors > 1) ? " files in export directory could not be read !" : " file in export directory could not be read !"));
     }
