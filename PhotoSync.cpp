@@ -3,10 +3,12 @@
 
 
 PhotoSync::PhotoSync(QWidget *parent)
-    : QMainWindow(parent)
+    : QMainWindow(parent), m_fileManager(this, m_ui)
 {
     m_ui.setupUi(this);
     m_ui.progressBar->setValue(0);
+    m_positiveDefaultText = m_ui.positivePushButton->text();
+
     QObject::connect(m_ui.importToolButton, &QToolButton::clicked, this, &PhotoSync::askImportFolder);
     QObject::connect(m_ui.exportToolButton, &QToolButton::clicked, this, &PhotoSync::askExportFolder);
     QObject::connect(m_ui.positivePushButton, &QToolButton::clicked, this, &PhotoSync::run);
@@ -29,9 +31,16 @@ void PhotoSync::askExportFolder()
 
 void PhotoSync::run()
 {
-    FileManager fileManager(this, m_ui);
-    fileManager.run();
+    QObject::connect(m_ui.positivePushButton, &QToolButton::clicked, this, &PhotoSync::cancel);
+    m_ui.positivePushButton->setText("Cancel");
 
-    //TODO manage exceptions when drive is disconnected ?
-    //TODO check errors ??
+    m_fileManager.run();
+
+    QObject::connect(m_ui.positivePushButton, &QToolButton::clicked, this, &PhotoSync::run);
+    m_ui.positivePushButton->setText(m_positiveDefaultText);
+}
+
+void PhotoSync::cancel()
+{
+    m_fileManager.cancel();
 }

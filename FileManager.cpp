@@ -1,4 +1,5 @@
 #include "FileManager.h"
+#include "PhotoSync.h"
 #include <QMessageBox>
 #include <QDir>
 #include <QDirIterator>
@@ -29,6 +30,7 @@ void FileManager::run()
 
     if (checkDir()) {
         std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
+
         m_ui.textEditOutput->append("SYNC STARTED !");
         m_ui.textEditOutput->append("FROM : " + m_ui.importEdit->text());
         m_ui.textEditOutput->append("TO   : " + m_ui.exportEdit->text());
@@ -36,10 +38,11 @@ void FileManager::run()
         m_existingFiles.clear();
         m_exportDirectories.clear();
         m_exportFiles.clear();
-
+        
         m_copyCount = 0;
         m_importErrors = 0;
         m_exportErrors = 0;
+        m_canceled = false;
 
         buildExistingFileData();
         buildImportFileData();
@@ -120,6 +123,11 @@ bool FileManager::getDate(const QFileInfo & fileInfo, Date &date)
     }
 
     return !readError;
+}
+
+void FileManager::cancel()
+{
+    m_canceled = true;
 }
 
 void FileManager::buildExistingFileData()

@@ -14,6 +14,7 @@ public:
     FileManager(QWidget *parent, Ui::PhotoSyncClass &ui);
     ~FileManager();
     void run();
+    void cancel();
 
 private:
     bool checkDir();
@@ -34,4 +35,5 @@ private:
     int m_copyCount;
     int m_importErrors;
     int m_exportErrors;
+    bool m_canceled;
 };
