@@ -14,7 +14,7 @@ extern "C"
 
 
 FileManager::FileManager(QWidget *parent, Ui::PhotoSyncClass &ui) :
-    m_parent(parent), m_ui(ui)
+    m_runCount(0), m_parent(parent), m_ui(ui)
 {
     m_extensions << "*.jpg" << "*.mp4";
 }
@@ -31,7 +31,9 @@ void FileManager::run()
     if (checkDir()) {
         std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
 
-        m_ui.textEditOutput->append("SYNC STARTED !");
+        if (m_runCount++)
+            m_ui.textEditOutput->append("");
+
         m_ui.textEditOutput->append("FROM : " + m_ui.importEdit->text());
         m_ui.textEditOutput->append("TO      : " + m_ui.exportEdit->text());
 
@@ -51,8 +53,6 @@ void FileManager::run()
 
         std::chrono::steady_clock::time_point endTime = std::chrono::steady_clock::now();
         printElapsedTime(startTime, endTime);
-
-        m_ui.textEditOutput->append("SYNC ENDED !");
     }
 }
 

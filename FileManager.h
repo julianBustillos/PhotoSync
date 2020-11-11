@@ -26,6 +26,7 @@ private:
     void printElapsedTime(std::chrono::steady_clock::time_point start, std::chrono::steady_clock::time_point end);
 
 private:
+    int m_runCount;
     QWidget *m_parent;
     Ui::PhotoSyncClass &m_ui;
     QStringList m_extensions;
