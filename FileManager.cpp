@@ -134,8 +134,13 @@ void FileManager::buildExistingFileData()
 {
     QDirIterator it(m_ui.exportEdit->text(), m_extensions, QDir::Files, QDirIterator::Subdirectories);
     while (it.hasNext()) {
+        if (m_canceled)
+            return;
+
         QFileInfo fileInfo(it.next());
         m_existingFiles[fileInfo.size()].emplace_back(fileInfo.filePath());
+        if (m_canceled)
+            return;
     }
 }
 
@@ -144,6 +149,9 @@ void FileManager::buildImportFileData()
     int duplicateCount = 0;
     QDirIterator it(m_ui.importEdit->text(), m_extensions, QDir::Files, QDirIterator::Subdirectories);
     while (it.hasNext()) {
+        if (m_canceled)
+            return;
+
         QFileInfo fileInfo(it.next());
         bool copyFile = true;
 
@@ -212,6 +220,9 @@ void FileManager::exportFiles()
     }
 
     for (auto &file : m_exportFiles) {
+        if (m_canceled)
+            return;
+
         QFileInfo importFileInfo(file.m_path);
         QString fileName = importFileInfo.fileName();
         QFileInfo exportFileInfo(exportPath.absoluteFilePath(file.m_date.toQString() + "\\" + fileName));
@@ -241,6 +252,10 @@ void FileManager::printStats()
 
     if (m_importErrors > 0) {
         m_ui.textEditOutput->append("ERROR : " + QString::number(m_importErrors) + ((m_importErrors > 1) ? " files in import directory could not be read !" : " file in import directory could not be read !"));
+    }
+
+    if (m_canceled) {
+        m_ui.textEditOutput->append("SYNC CANCELED.");
     }
 }
 
