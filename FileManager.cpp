@@ -41,6 +41,7 @@ void FileManager::run()
         m_DirectoriesToCreate.clear();
         m_filesToCopy.clear();
         
+        m_duplicateCount = 0;
         m_copyCount = 0;
         m_importErrors = 0;
         m_exportErrors = 0;
@@ -146,7 +147,6 @@ void FileManager::buildExistingFileData()
 
 void FileManager::buildImportFileData()
 {
-    int duplicateCount = 0;
     QDirIterator it(m_ui.importEdit->text(), m_extensions, QDir::Files, QDirIterator::Subdirectories);
     QStringList importFilePaths;
 
@@ -209,13 +209,10 @@ void FileManager::buildImportFileData()
             m_filesToCopy.emplace_back(date, fileInfo.filePath());
         }
         else {
-            duplicateCount++;
+            m_duplicateCount++;
             m_ui.progressBar->setValue(m_ui.progressBar->value() + 1);
         }
     }
-
-    if (duplicateCount > 0)
-        m_ui.textEditOutput->append("Found " + QString::number(duplicateCount) + (duplicateCount > 1 ? " already existing files." : " already existing file."));
 }
 
 void FileManager::exportFiles()
@@ -251,6 +248,9 @@ void FileManager::exportFiles()
 
 void FileManager::printStats()
 {
+    if (m_duplicateCount > 0)
+        m_ui.textEditOutput->append("Found " + QString::number(m_duplicateCount) + (m_duplicateCount > 1 ? " already existing files." : " already existing file."));
+
     m_ui.textEditOutput->append(QString::number(m_copyCount) + (m_copyCount > 1 ? " files copied." : " file copied."));
 
     if (m_exportErrors > 0) {
@@ -262,7 +262,7 @@ void FileManager::printStats()
     }
 
     if (m_canceled) {
-        m_ui.textEditOutput->append("SYNC CANCELED.");
+        m_ui.textEditOutput->append("SYNC CANCELED !");
     }
 }
 

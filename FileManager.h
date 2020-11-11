@@ -33,6 +33,7 @@ private:
     std::unordered_map<qint64, std::vector<ExistingFile>> m_existingFiles;
     std::set<Date> m_DirectoriesToCreate;
     std::vector<ExportFile> m_filesToCopy;
+    int m_duplicateCount;
     int m_copyCount;
     int m_importErrors;
     int m_exportErrors;
