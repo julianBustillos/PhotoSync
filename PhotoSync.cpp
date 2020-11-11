@@ -31,11 +31,13 @@ void PhotoSync::askExportFolder()
 
 void PhotoSync::run()
 {
+    QObject::disconnect(m_ui.positivePushButton, nullptr, nullptr, nullptr);
     QObject::connect(m_ui.positivePushButton, &QToolButton::clicked, this, &PhotoSync::cancel);
     m_ui.positivePushButton->setText("Cancel");
 
     m_fileManager.run();
 
+    QObject::disconnect(m_ui.positivePushButton, nullptr, nullptr, nullptr);
     QObject::connect(m_ui.positivePushButton, &QToolButton::clicked, this, &PhotoSync::run);
     m_ui.positivePushButton->setText(m_positiveDefaultText);
 }
