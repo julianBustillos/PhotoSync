@@ -33,11 +33,11 @@ void FileManager::run()
 
         m_ui.textEditOutput->append("SYNC STARTED !");
         m_ui.textEditOutput->append("FROM : " + m_ui.importEdit->text());
-        m_ui.textEditOutput->append("TO   : " + m_ui.exportEdit->text());
+        m_ui.textEditOutput->append("TO      : " + m_ui.exportEdit->text());
 
         m_existingFiles.clear();
-        m_exportDirectories.clear();
-        m_exportFiles.clear();
+        m_DirectoriesToCreate.clear();
+        m_filesToCopy.clear();
         
         m_copyCount = 0;
         m_importErrors = 0;
@@ -148,13 +148,24 @@ void FileManager::buildImportFileData()
 {
     int duplicateCount = 0;
     QDirIterator it(m_ui.importEdit->text(), m_extensions, QDir::Files, QDirIterator::Subdirectories);
-    while (it.hasNext()) {
+    QStringList importFilePaths;
+
+    while (it.hasNext())
+        importFilePaths.append(it.next());
+
+    size_t progressSize = importFilePaths.size();
+    if (progressSize == 0)
+        m_ui.progressBar->setValue(100);
+    else
+        m_ui.progressBar->setMaximum(progressSize);
+
+    for (QString filePath : importFilePaths) {
         if (m_canceled)
             return;
 
-        QFileInfo fileInfo(it.next());
         bool copyFile = true;
 
+        QFileInfo fileInfo(filePath);
         auto filesIt = m_existingFiles.find(fileInfo.size());
         if (filesIt != m_existingFiles.end()) {
             QCryptographicHash hash(QCryptographicHash::Md5);
@@ -194,18 +205,14 @@ void FileManager::buildImportFileData()
                 m_importErrors++;
                 continue;
             }
-            m_exportDirectories.insert(date);
-            m_exportFiles.emplace_back(date, fileInfo.filePath());
+            m_DirectoriesToCreate.insert(date);
+            m_filesToCopy.emplace_back(date, fileInfo.filePath());
         }
-        else
+        else {
             duplicateCount++;
+            m_ui.progressBar->setValue(m_ui.progressBar->value() + 1);
+        }
     }
-
-    size_t exportSize = m_exportFiles.size();
-    if (exportSize == 0)
-        m_ui.progressBar->setValue(100);
-    else
-        m_ui.progressBar->setMaximum(exportSize);
 
     if (duplicateCount > 0)
         m_ui.textEditOutput->append("Found " + QString::number(duplicateCount) + (duplicateCount > 1 ? " already existing files." : " already existing file."));
@@ -215,11 +222,11 @@ void FileManager::exportFiles()
 {
     QDir exportPath(m_ui.exportEdit->text());
 
-    for (auto &date : m_exportDirectories) {
+    for (auto &date : m_DirectoriesToCreate) {
         exportPath.mkpath(date.toQString());
     }
 
-    for (auto &file : m_exportFiles) {
+    for (auto &file : m_filesToCopy) {
         if (m_canceled)
             return;
 
