@@ -36,10 +36,6 @@ void FileManager::run()
 
         m_ui.textEditOutput->append("FROM : " + m_ui.importEdit->text());
         m_ui.textEditOutput->append("TO      : " + m_ui.exportEdit->text());
-
-        m_existingFiles.clear();
-        m_DirectoriesToCreate.clear();
-        m_filesToCopy.clear();
         
         m_duplicateCount = 0;
         m_copyCount = 0;
@@ -51,6 +47,10 @@ void FileManager::run()
         buildImportFileData();
         exportFiles();
         printStats();
+
+        m_existingFiles.clear();
+        m_DirectoriesToCreate.clear();
+        m_filesToCopy.clear();
 
         std::chrono::steady_clock::time_point endTime = std::chrono::steady_clock::now();
         printElapsedTime(startTime, endTime);
