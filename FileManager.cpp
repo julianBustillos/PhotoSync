@@ -193,6 +193,8 @@ void FileManager::buildImportFileData()
                 
                 if (newFileChecksum == fileData.m_checksum) {
                     copyFile = false;
+                    m_duplicateCount++;
+                    m_ui.progressBar->setValue(m_ui.progressBar->value() + 1);
                     break;
                 }
             }
@@ -207,10 +209,6 @@ void FileManager::buildImportFileData()
             }
             m_DirectoriesToCreate.insert(date);
             m_filesToCopy.emplace_back(date, fileInfo.filePath());
-        }
-        else {
-            m_duplicateCount++;
-            m_ui.progressBar->setValue(m_ui.progressBar->value() + 1);
         }
     }
 }
@@ -239,7 +237,6 @@ void FileManager::exportFiles()
 
         if (count < 100)
             copyResult = QFile::copy(importFileInfo.filePath(), exportFileInfo.filePath());
-
         if (copyResult)
             m_copyCount++;
         else
