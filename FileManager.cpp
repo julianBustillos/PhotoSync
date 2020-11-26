@@ -232,11 +232,14 @@ void FileManager::exportFiles()
         QFileInfo exportFileInfo(exportPath.absoluteFilePath(file.m_date.toQString() + "\\" + fileName));
         
         int count = 0;
-        while (exportFileInfo.exists()) {
+        bool copyResult = false;
+        while (exportFileInfo.exists() && count < 100) {
             exportFileInfo.setFile(fileName + "_" + QString::number(++count));
         }
 
-        bool copyResult = QFile::copy(importFileInfo.filePath(), exportFileInfo.filePath());
+        if (count < 100)
+            copyResult = QFile::copy(importFileInfo.filePath(), exportFileInfo.filePath());
+
         if (copyResult)
             m_copyCount++;
         else
