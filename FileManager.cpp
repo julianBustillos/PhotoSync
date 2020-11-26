@@ -39,8 +39,6 @@ void FileManager::run()
         
         m_duplicateCount = 0;
         m_copyCount = 0;
-        m_importErrors = 0;
-        m_exportErrors = 0;
         m_canceled = false;
 
         buildExistingFileData();
@@ -48,6 +46,8 @@ void FileManager::run()
         exportFiles();
         printStats();
 
+        m_importErrors.clear();
+        m_exportErrors.clear();
         m_existingFiles.clear();
         m_DirectoriesToCreate.clear();
         m_filesToCopy.clear();
@@ -171,7 +171,7 @@ void FileManager::buildImportFileData()
             QCryptographicHash hash(QCryptographicHash::Md5);
             QFile newFile(fileInfo.filePath());
             if (!newFile.open(QIODevice::ReadOnly)) {
-                m_importErrors++;
+                m_importErrors.insert(fileInfo.filePath());
                 continue;
             }
             hash.addData(newFile.readAll());
@@ -181,7 +181,7 @@ void FileManager::buildImportFileData()
                 if (fileData.m_checksum.isEmpty()) {
                     QFile existingFile(fileData.m_path);
                     if (!existingFile.open(QIODevice::ReadOnly)) {
-                        m_exportErrors++;
+                        m_exportErrors.insert(fileData.m_path);
                         continue;
                     }
 
@@ -204,7 +204,7 @@ void FileManager::buildImportFileData()
         if (copyFile) {
             Date date;
             if (!getDate(fileInfo, date)) {
-                m_importErrors++;
+                m_importErrors.insert(fileInfo.filePath());
                 continue;
             }
             m_DirectoriesToCreate.insert(date);
@@ -240,7 +240,7 @@ void FileManager::exportFiles()
         if (copyResult)
             m_copyCount++;
         else
-            m_importErrors++;
+            m_importErrors.insert(importFileInfo.filePath());
         m_ui.progressBar->setValue(m_ui.progressBar->value() + 1);
     }
 
@@ -253,12 +253,12 @@ void FileManager::printStats()
 
     m_ui.textEditOutput->append(QString::number(m_copyCount) + (m_copyCount > 1 ? " files copied." : " file copied."));
 
-    if (m_exportErrors > 0) {
-        m_ui.textEditOutput->append("ERROR : " + QString::number(m_exportErrors) + ((m_exportErrors > 1) ? " files in export directory could not be read !" : " file in export directory could not be read !"));
+    if (m_exportErrors.size() > 0) {
+        m_ui.textEditOutput->append("ERROR : " + QString::number(m_exportErrors.size()) + ((m_exportErrors.size() > 1) ? " files in export directory could not be read !" : " file in export directory could not be read !"));
     }
 
-    if (m_importErrors > 0) {
-        m_ui.textEditOutput->append("ERROR : " + QString::number(m_importErrors) + ((m_importErrors > 1) ? " files in import directory could not be read !" : " file in import directory could not be read !"));
+    if (m_importErrors.size() > 0) {
+        m_ui.textEditOutput->append("ERROR : " + QString::number(m_importErrors.size()) + ((m_importErrors.size() > 1) ? " files in import directory could not be read !" : " file in import directory could not be read !"));
     }
 
     if (m_canceled) {

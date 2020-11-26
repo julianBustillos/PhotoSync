@@ -33,9 +33,9 @@ private:
     std::unordered_map<qint64, std::vector<ExistingFile>> m_existingFiles;
     std::set<Date> m_DirectoriesToCreate;
     std::vector<ExportFile> m_filesToCopy;
+    std::set<QString> m_importErrors;
+    std::set<QString> m_exportErrors;
     int m_duplicateCount;
     int m_copyCount;
-    int m_importErrors;
-    int m_exportErrors;
     bool m_canceled;
 };
