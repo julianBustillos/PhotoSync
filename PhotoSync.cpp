@@ -1,13 +1,18 @@
 #include "PhotoSync.h"
-#include <QFileDialog>
+
+#include <Shlobj.h>
+#include <Shlwapi.h>
 
 
 PhotoSync::PhotoSync(QWidget *parent)
-    : QMainWindow(parent), m_fileManager(this, m_ui)
+    : QMainWindow(parent), m_fileDialog(this), m_fileManager(this, m_ui)
 {
     m_ui.setupUi(this);
     m_ui.progressBar->setValue(0);
     m_positiveDefaultText = m_ui.positivePushButton->text();
+    m_fileDialog.setFileMode(QFileDialog::Directory);
+    m_fileDialog.setOption(QFileDialog::DontUseNativeDialog, true);
+    m_fileDialog.setOption(QFileDialog::ShowDirsOnly, false);
 
     QObject::connect(m_ui.importToolButton, &QToolButton::clicked, this, &PhotoSync::askImportFolder);
     QObject::connect(m_ui.exportToolButton, &QToolButton::clicked, this, &PhotoSync::askExportFolder);
@@ -17,14 +22,22 @@ PhotoSync::PhotoSync(QWidget *parent)
 
 void PhotoSync::askImportFolder()
 {
-    QString directory = QFileDialog::getExistingDirectory(this, "Import directory path", m_ui.importEdit->text(), QFileDialog::ShowDirsOnly);
+    m_fileDialog.setWindowTitle("Import directory path");
+    m_fileDialog.setDirectory(m_ui.importEdit->text());
+    m_fileDialog.exec();
+    QString directory = m_fileDialog.directory().path();
+
     if (!directory.isEmpty())
         m_ui.importEdit->setText(directory);
 }
 
 void PhotoSync::askExportFolder()
 {
-    QString directory = QFileDialog::getExistingDirectory(this, "Export directory path", m_ui.exportEdit->text(), QFileDialog::ShowDirsOnly);
+    m_fileDialog.setWindowTitle("Export directory path");
+    m_fileDialog.setDirectory(m_ui.exportEdit->text());
+    m_fileDialog.exec();
+    QString directory = m_fileDialog.directory().path();
+
     if (!directory.isEmpty())
         m_ui.exportEdit->setText(directory);
 }

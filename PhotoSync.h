@@ -3,6 +3,7 @@
 #include <QMainWindow>
 #include "ui_PhotoSync.h"
 #include "FileManager.h"
+#include <QFileDialog>
 
 
 class PhotoSync : public QMainWindow
@@ -21,6 +22,7 @@ private :
 
 private:
     Ui::PhotoSyncClass m_ui;
+    QFileDialog m_fileDialog;
     FileManager m_fileManager;
     QString m_positiveDefaultText;
 };
