@@ -9,6 +9,7 @@ PhotoSync::PhotoSync(QWidget *parent)
 {
     m_ui.setupUi(this);
     m_ui.progressBar->setValue(0);
+
     m_positiveDefaultText = m_ui.positivePushButton->text();
     m_fileDialog.setFileMode(QFileDialog::Directory);
     m_fileDialog.setOption(QFileDialog::DontUseNativeDialog, true);
@@ -18,14 +19,21 @@ PhotoSync::PhotoSync(QWidget *parent)
     QObject::connect(m_ui.exportToolButton, &QToolButton::clicked, this, &PhotoSync::askExportFolder);
     QObject::connect(m_ui.positivePushButton, &QToolButton::clicked, this, &PhotoSync::run);
     QObject::connect(m_ui.negativePushButton, &QToolButton::clicked, this, &PhotoSync::close);
+
+PhotoSync::~PhotoSync()
+{
+    m_fileDialog.setProxyModel(nullptr);
+    if (m_proxyModel)
+        delete m_proxyModel;
+    m_proxyModel = nullptr;
 }
 
 void PhotoSync::askImportFolder()
 {
-    m_fileDialog.setWindowTitle("Import directory path");
-    m_fileDialog.setDirectory(m_ui.importEdit->text());
-    m_fileDialog.exec();
-    QString directory = m_fileDialog.directory().path();
+    m_dialog.setWindowTitle("Import directory path");
+    m_dialog.setDirectory(m_ui.importEdit->text());
+    m_dialog.exec();
+    QString directory = m_dialog.getDirectory();
 
     if (!directory.isEmpty())
         m_ui.importEdit->setText(directory);
@@ -33,10 +41,10 @@ void PhotoSync::askImportFolder()
 
 void PhotoSync::askExportFolder()
 {
-    m_fileDialog.setWindowTitle("Export directory path");
-    m_fileDialog.setDirectory(m_ui.exportEdit->text());
-    m_fileDialog.exec();
-    QString directory = m_fileDialog.directory().path();
+    m_dialog.setWindowTitle("Export directory path");
+    m_dialog.setDirectory(m_ui.exportEdit->text());
+    m_dialog.exec();
+    QString directory = m_dialog.getDirectory();
 
     if (!directory.isEmpty())
         m_ui.exportEdit->setText(directory);

@@ -2,6 +2,7 @@
 
 #include <QMainWindow>
 #include "ui_PhotoSync.h"
+#include "FileExplorerDialog.h"
 #include "FileManager.h"
 #include <QFileDialog>
 
@@ -13,6 +14,7 @@ class PhotoSync : public QMainWindow
 
 public:
     PhotoSync(QWidget *parent = Q_NULLPTR);
+    ~PhotoSync();
 
 private :
     void askImportFolder();
@@ -22,6 +24,7 @@ private :
 
 private:
     Ui::PhotoSyncClass m_ui;
+    FileExplorerDialog m_dialog; //Todo rename ??
     QFileDialog m_fileDialog;
     FileManager m_fileManager;
     QString m_positiveDefaultText;
