@@ -6,7 +6,9 @@ FileExplorerDialog::FileExplorerDialog(QWidget *parent)
     : QDialog(parent)
 {
     m_ui.setupUi(this);
-    m_ui.fileTreeView->setModel(&m_fileSystemModel);
+    //m_ui.fileTreeView->setModel(&m_fileSystemModel);
+    m_ui.fileTreeView->setModel(&m_MTPFileModel);
+
     // TODO !! set only directories for filesystemmodel
     /*
     m_fileDialog.setFileMode(QFileDialog::Directory);
@@ -24,7 +26,7 @@ FileExplorerDialog::~FileExplorerDialog()
 void FileExplorerDialog::setDirectory(QString directory)
 {
     QModelIndex dirIndex = m_fileSystemModel.setRootPath(directory);
-    m_currentDirectory = dirIndex.isValid() ? directory : "";
+    m_directory = dirIndex.isValid() ? directory : "";
     m_ui.fileTreeView->collapseAll();
     m_ui.fileTreeView->scrollTo(dirIndex);
     m_ui.fileTreeView->selectionModel()->select(dirIndex, QItemSelectionModel::Select);
@@ -32,7 +34,7 @@ void FileExplorerDialog::setDirectory(QString directory)
 
 QString FileExplorerDialog::getDirectory()
 {
-    return m_currentDirectory;
+    return m_directory;
 }
 
 void FileExplorerDialog::chooseDirectory()
@@ -41,5 +43,5 @@ void FileExplorerDialog::chooseDirectory()
     QString directory;
     if (index.isValid())
         directory = m_fileSystemModel.filePath(index);
-    m_currentDirectory = directory;
+    m_directory = directory;
 }

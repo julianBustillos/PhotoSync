@@ -108,12 +108,14 @@
     <ClCompile Include="FileData.cpp" />
     <ClCompile Include="FileExplorerDialog.cpp" />
     <ClCompile Include="FileManager.cpp" />
+    <ClCompile Include="MTPFileModel.cpp" />
     <ClCompile Include="PhotoSync.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="easyexif\exif.h" />
     <ClInclude Include="FileData.h" />
+    <ClInclude Include="MTPFileModel.h" />
     <QtMoc Include="FileExplorerDialog.h" />
     <ClInclude Include="FileManager.h" />
   </ItemGroup>
