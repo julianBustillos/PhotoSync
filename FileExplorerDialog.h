@@ -18,6 +18,10 @@ public:
     QString getDirectory();
 
 private:
+    void chooseDirectory();
+
+private:
     Ui::FileExplorerDialogClass m_ui;
-    QFileSystemModel m_model;
+    QString m_currentDirectory;
+    QFileSystemModel m_fileSystemModel;
 };

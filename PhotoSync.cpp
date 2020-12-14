@@ -1,19 +1,14 @@
 #include "PhotoSync.h"
-
-#include <Shlobj.h>
-#include <Shlwapi.h>
+#include "MTPProxyModel.h"
 
 
 PhotoSync::PhotoSync(QWidget *parent)
-    : QMainWindow(parent), m_fileDialog(this), m_fileManager(this, m_ui)
+    : QMainWindow(parent), m_fileManager(this, m_ui)
 {
     m_ui.setupUi(this);
     m_ui.progressBar->setValue(0);
 
     m_positiveDefaultText = m_ui.positivePushButton->text();
-    m_fileDialog.setFileMode(QFileDialog::Directory);
-    m_fileDialog.setOption(QFileDialog::DontUseNativeDialog, true);
-    m_fileDialog.setOption(QFileDialog::ShowDirsOnly, false);
 
     QObject::connect(m_ui.importToolButton, &QToolButton::clicked, this, &PhotoSync::askImportFolder);
     QObject::connect(m_ui.exportToolButton, &QToolButton::clicked, this, &PhotoSync::askExportFolder);
@@ -22,10 +17,6 @@ PhotoSync::PhotoSync(QWidget *parent)
 
 PhotoSync::~PhotoSync()
 {
-    m_fileDialog.setProxyModel(nullptr);
-    if (m_proxyModel)
-        delete m_proxyModel;
-    m_proxyModel = nullptr;
 }
 
 void PhotoSync::askImportFolder()

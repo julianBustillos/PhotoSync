@@ -25,7 +25,6 @@ private :
 private:
     Ui::PhotoSyncClass m_ui;
     FileExplorerDialog m_dialog; //Todo rename ??
-    QFileDialog m_fileDialog;
     FileManager m_fileManager;
     QString m_positiveDefaultText;
 };
