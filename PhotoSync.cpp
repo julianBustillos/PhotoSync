@@ -1,5 +1,4 @@
 #include "PhotoSync.h"
-#include "MTPProxyModel.h"
 
 
 PhotoSync::PhotoSync(QWidget *parent)
