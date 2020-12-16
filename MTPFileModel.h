@@ -1,5 +1,6 @@
 #pragma once
 #include <QAbstractItemModel>
+#include "MTPFileNode.h"
 #include <QFileIconProvider>
 
 
@@ -18,5 +19,25 @@ public:
     QVariant headerData(int section, Qt::Orientation orientation, int role) const;
 
 private:
-    QFileIconProvider m_iconProvider;
+    MTPFileNode *node(const QModelIndex &index) const;
+
+    /*
+    bool hasChildren(const QModelIndex &parent = QModelIndex()) const override;
+    bool canFetchMore(const QModelIndex &parent) const override;
+    void fetchMore(const QModelIndex &parent) override;
+    Qt::ItemFlags flags(const QModelIndex &index) const override;
+    void setIconProvider(QFileIconProvider *provider);
+    QFileIconProvider *iconProvider() const;
+    void removeNode(MTPFileModel *parentNode, const QString &name);
+    MTPFileModel* addNode(MTPFileModel *parentNode, const QString &fileName, const QFileInfo &info);
+    void addVisibleFiles(MTPFileModel *parentNode, const QStringList &newFiles);
+    void removeVisibleFile(MTPFileModel *parentNode, int visibleLocation);
+    void sortChildren(int column, const QModelIndex &parent);
+    void _q_directoryChanged(const QString &directory, const QStringList &list);
+    void _q_fileSystemChanged(const QString &path, const QVector<QPair<QString, QFileInfo> > &);
+    */
+
+private:
+    MTPFileNode *m_root;
+    QFileIconProvider m_iconProvider; //TODO REMOVE ??
 };

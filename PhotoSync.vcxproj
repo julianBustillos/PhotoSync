@@ -109,6 +109,7 @@
     <ClCompile Include="FileExplorerDialog.cpp" />
     <ClCompile Include="FileManager.cpp" />
     <ClCompile Include="MTPFileModel.cpp" />
+    <ClCompile Include="MTPFileNode.cpp" />
     <ClCompile Include="PhotoSync.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
@@ -116,6 +117,8 @@
     <ClInclude Include="easyexif\exif.h" />
     <ClInclude Include="FileData.h" />
     <ClInclude Include="MTPFileModel.h" />
+    <ClInclude Include="MTPFileNode.h" />
+    <ClInclude Include="MTPFileNodePathKey.h" />
     <QtMoc Include="FileExplorerDialog.h" />
     <ClInclude Include="FileManager.h" />
   </ItemGroup>

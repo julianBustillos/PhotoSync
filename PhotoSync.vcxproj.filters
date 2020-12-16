@@ -56,6 +56,9 @@
     <ClCompile Include="MTPFileModel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MTPFileNode.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FileManager.h">
@@ -68,6 +71,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MTPFileModel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MTPFileNode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MTPFileNodePathKey.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

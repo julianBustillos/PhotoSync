@@ -24,6 +24,6 @@ private:
 private:
     Ui::FileExplorerDialogClass m_ui;
     QString m_directory;
-    QFileSystemModel m_fileSystemModel;
+    //QFileSystemModel m_fileSystemModel;
     MTPFileModel m_MTPFileModel;
 };
