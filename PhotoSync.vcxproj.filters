@@ -59,6 +59,9 @@
     <ClCompile Include="MTPFileNode.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="WPDManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FileManager.h">
@@ -77,6 +80,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MTPFileNodePathKey.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="WPDManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

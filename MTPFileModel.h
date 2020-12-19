@@ -1,7 +1,8 @@
 #pragma once
 #include <QAbstractItemModel>
-#include "MTPFileNode.h"
 #include <QFileIconProvider>
+#include "MTPFileNode.h"
+#include "WPDManager.h"
 
 
 class MTPFileModel : public QAbstractItemModel
@@ -11,6 +12,8 @@ public:
     ~MTPFileModel();
 
 public:
+    QModelIndex setRootPath(const QString &newPath);
+    QString filePath(const QModelIndex &index) const;
     QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const;
     QModelIndex parent(const QModelIndex &child) const;
     int rowCount(const QModelIndex &parent = QModelIndex()) const;
@@ -20,24 +23,24 @@ public:
 
 private:
     MTPFileNode *node(const QModelIndex &index) const;
+    void getDevices();
+    void populate(MTPFileNode &node) const;
 
     /*
     bool hasChildren(const QModelIndex &parent = QModelIndex()) const override;
-    bool canFetchMore(const QModelIndex &parent) const override;
-    void fetchMore(const QModelIndex &parent) override;
     Qt::ItemFlags flags(const QModelIndex &index) const override;
-    void setIconProvider(QFileIconProvider *provider);
-    QFileIconProvider *iconProvider() const;
-    void removeNode(MTPFileModel *parentNode, const QString &name);
-    MTPFileModel* addNode(MTPFileModel *parentNode, const QString &fileName, const QFileInfo &info);
-    void addVisibleFiles(MTPFileModel *parentNode, const QStringList &newFiles);
-    void removeVisibleFile(MTPFileModel *parentNode, int visibleLocation);
     void sortChildren(int column, const QModelIndex &parent);
     void _q_directoryChanged(const QString &directory, const QStringList &list);
     void _q_fileSystemChanged(const QString &path, const QVector<QPair<QString, QFileInfo> > &);
     */
 
 private:
+    static MTPFileNode::Type TypeConversion(WPDManager::ItemType type);
+    static QFileIconProvider::IconType IconConversion(WPDManager::ItemType type);
+    static QString FormatDate(QString date);
+
+private:
     MTPFileNode *m_root;
+    WPDManager *m_WPDManager; //TODO CHANGE ??
     QFileIconProvider m_iconProvider; //TODO REMOVE ??
 };

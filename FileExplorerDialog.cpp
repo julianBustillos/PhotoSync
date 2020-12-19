@@ -26,10 +26,12 @@ FileExplorerDialog::~FileExplorerDialog()
 void FileExplorerDialog::setDirectory(QString directory)
 {
     //QModelIndex dirIndex = m_fileSystemModel.setRootPath(directory);
-    //m_directory = dirIndex.isValid() ? directory : "";
-    //m_ui.fileTreeView->collapseAll();
-    //m_ui.fileTreeView->scrollTo(dirIndex);
-    //m_ui.fileTreeView->selectionModel()->select(dirIndex, QItemSelectionModel::Select);
+    QModelIndex dirIndex = m_MTPFileModel.setRootPath(directory);
+
+    m_directory = dirIndex.isValid() ? directory : "";
+    m_ui.fileTreeView->collapseAll();
+    m_ui.fileTreeView->scrollTo(dirIndex);
+    m_ui.fileTreeView->selectionModel()->select(dirIndex, QItemSelectionModel::Select);
 }
 
 QString FileExplorerDialog::getDirectory()
@@ -39,9 +41,10 @@ QString FileExplorerDialog::getDirectory()
 
 void FileExplorerDialog::chooseDirectory()
 {
-    //QModelIndex index = m_ui.fileTreeView->currentIndex();
-    //QString directory;
-    //if (index.isValid())
-    //    directory = m_fileSystemModel.filePath(index);
-    //m_directory = directory;
+    QModelIndex index = m_ui.fileTreeView->currentIndex();
+    QString directory;
+    if (index.isValid())
+        directory = m_MTPFileModel.filePath(index);
+        //directory = m_fileSystemModel.filePath(index);
+    m_directory = directory;
 }
