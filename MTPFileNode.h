@@ -18,7 +18,7 @@ public:
 public:
     Q_DISABLE_COPY_MOVE(MTPFileNode)
 
-    explicit MTPFileNode(QString &name, Type type = UNKNOWN, qint64 size = 0, QString lastModified = "", QIcon &icon = QIcon(), MTPFileNode *parent = nullptr);
+    MTPFileNode(const QString &name = "root", Type type = UNKNOWN, qint64 size = 0, QString lastModified = "", const QIcon &icon = QIcon(), MTPFileNode *parent = nullptr);
     ~MTPFileNode();
 
 public:
@@ -31,9 +31,18 @@ public:
     inline MTPFileNode *getParent();
     inline QHash<MTPFileNodePathKey, MTPFileNode *> &getChildren();
     inline QList<QString> &getVisibleChildren();
+    inline bool isFetching();
     inline bool isPopulated();
+    inline void setFetching();
     inline void setPopulated();
     QString getPath() const;
+
+private:
+    enum Step {
+        TODO = 0,
+        FETCHING = 1,
+        POPULATED = 2
+    };
 
 private:
     static QString TypeToString(Type type);
@@ -47,9 +56,8 @@ private:
     MTPFileNode *m_parent;
     QHash<MTPFileNodePathKey, MTPFileNode *> m_children;
     QList<QString> m_visibleChildren;
-    bool m_populatedChildren;
+    Step m_step;
 };
-
 
 inline int MTPFileNode::visibleLocation(const QString &childName) const 
 {
@@ -95,13 +103,24 @@ inline QList<QString>& MTPFileNode::getVisibleChildren()
 {
     return m_visibleChildren;
 }
+inline bool MTPFileNode::isFetching()
+{
+    return m_step >= FETCHING;
+}
 
 inline bool MTPFileNode::isPopulated()
 {
-    return m_populatedChildren;
+    return m_step >= POPULATED;
+}
+
+inline void MTPFileNode::setFetching()
+{
+    if (m_step < FETCHING)
+        m_step = FETCHING;
 }
 
 inline void MTPFileNode::setPopulated()
 {
-    m_populatedChildren = true;
+    if (m_step < POPULATED)
+        m_step = POPULATED;
 }

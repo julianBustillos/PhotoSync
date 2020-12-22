@@ -1,10 +1,9 @@
 #include "MTPFileNode.h"
 
-
-MTPFileNode::MTPFileNode(QString &name, Type type, qint64 size, QString lastModified, QIcon &icon, MTPFileNode *parent) :
+MTPFileNode::MTPFileNode(const QString &name, Type type, qint64 size, QString lastModified, const QIcon &icon, MTPFileNode *parent) :
     m_name(name), m_type(type), m_size(size), m_lastModified(lastModified), m_icon(icon), m_parent(parent)
 {
-    m_populatedChildren = (type == FILE);
+    m_step = (type == FILE) ? POPULATED : TODO;
 }
 
 MTPFileNode::~MTPFileNode()

@@ -1,13 +1,17 @@
 #include "MTPFileModel.h"
-#include <vector>
+#include <QVector>
 
 
 MTPFileModel::MTPFileModel(QObject * parent) :
     QAbstractItemModel(parent)
 {
-    m_WPDManager = new WPDManager();
-    m_root = new MTPFileNode(QString("root"));
-    getDevices();
+    m_root = new MTPFileNode();
+    m_fetcher = new MTPFileFetcher(this);
+    if (m_fetcher) {
+        QObject::connect(m_fetcher, &MTPFileFetcher::loadedDevices, this, &MTPFileModel::addDevices);
+        QObject::connect(m_fetcher, &MTPFileFetcher::loadedContent, this, &MTPFileModel::populate);
+        m_fetcher->start(QThread::LowPriority);
+    }
 }
 
 MTPFileModel::~MTPFileModel()
@@ -15,29 +19,42 @@ MTPFileModel::~MTPFileModel()
     if (m_root)
         delete m_root;
 
-    if (m_WPDManager)
-        delete m_WPDManager;
+    if (m_fetcher) 
+        delete m_fetcher;
 }
 
-QModelIndex MTPFileModel::setRootPath(const QString & newPath)
+void MTPFileModel::setRootPath(const QString & newPath)
 {
+    m_rootStack.clear();
     QString copiedPath = newPath;
-    QVector<QStringRef> splittedPath = copiedPath.replace("\\", "/").splitRef("/");
+    QList<QString> splittedPath = copiedPath.replace("\\", "/").split("/");
+    for (auto fileName = splittedPath.rbegin(); fileName != splittedPath.rend(); fileName++)
+        m_rootStack.push(*fileName);
 
     MTPFileNode *node = m_root;
-    int index = 0;
-    int row = 0;
 
-    while (node && index < splittedPath.size()) {
-        populate(*node);
-        node = node->getChildren().value(splittedPath[index++].toString());
+    while (node && node->isPopulated() && !m_rootStack.isEmpty()) {
+        QString &fileName = m_rootStack.top();
+        node = node->getChildren().value(fileName);
+        m_rootStack.pop();
+    }
+
+    if (!node) {
+        m_rootStack.clear();
+        emit rootPathChanged(QModelIndex());
+        return;
+    }
+
+    if (m_fetcher && !m_rootStack.isEmpty()) {
+        m_rootStack.push(node->getName());
+        m_fetcher->addToFetch(node);
+        return;
     }
 
     if (node && node->getParent()) {
-        int row = node->getParent()->visibleLocation(splittedPath.last().toString());
-        return createIndex(row, 0, node);
+        int row = node->getParent()->visibleLocation(node->getName());
+        emit rootPathChanged(createIndex(row, 0, node));
     }
-    return QModelIndex();
 }
 
 QString MTPFileModel::filePath(const QModelIndex & index) const
@@ -61,9 +78,7 @@ QModelIndex MTPFileModel::index(int row, int column, const QModelIndex & parent)
 
     const QString &childName = parentNode->getVisibleChildren().at(row);
     MTPFileNode *indexNode = parentNode->getChildren().value(childName);
-    if (indexNode)
-        populate(*indexNode);
-
+    m_fetcher->addToFetch(indexNode);
     return createIndex(row, column, indexNode);
 }
 
@@ -73,16 +88,9 @@ QModelIndex MTPFileModel::parent(const QModelIndex & child) const
         return QModelIndex();
 
     MTPFileNode *indexNode = node(child);
-    MTPFileNode *parentNode = indexNode->getParent();
-    if (parentNode == nullptr || parentNode == m_root)
-        return QModelIndex();
-
-    MTPFileNode *grandParentNode = parentNode->getParent();
-    int visualRow = grandParentNode->visibleLocation(grandParentNode->getChildren().value(parentNode->getName())->getName());
-    if (visualRow == -1)
-        return QModelIndex();
-
-    return createIndex(visualRow, 0, parentNode);
+    if (indexNode)
+        return parent(*indexNode);
+    return QModelIndex();
 }
 
 int MTPFileModel::rowCount(const QModelIndex & parent) const
@@ -111,7 +119,6 @@ QVariant MTPFileModel::data(const QModelIndex & index, int role) const
     if (!indexNode)
         return QVariant();
 
-    populate(*indexNode);
     switch (role) {
     case Qt::EditRole:
     case Qt::DisplayRole:
@@ -137,10 +144,13 @@ QVariant MTPFileModel::data(const QModelIndex & index, int role) const
         if (index.column() == 1)
             return QVariant(Qt::AlignTrailing | Qt::AlignVCenter);
         break;
+    case Qt::ForegroundRole:
+        return node(index)->isPopulated() ? QColor(Qt::black) : QColor(Qt::gray);
     /*case QFileSystemModel::FilePermissions:
         return QVariant();*/
+    default:
+        return QVariant();
     }
-
     return QVariant();
 }
 
@@ -176,6 +186,71 @@ QVariant MTPFileModel::headerData(int section, Qt::Orientation orientation, int 
     return returnValue;
 }
 
+void MTPFileModel::addDevices(const QStringList &devices)
+{
+    for (const QString &device : devices) {
+        MTPFileNode *node = new MTPFileNode(device, MTPFileNode::DEVICE, 0, "", m_iconProvider.icon(QFileIconProvider::Computer), m_root);
+
+        if (node) {
+            m_root->getChildren().insert(MTPFileNodePathKey(device), node);
+            m_root->getVisibleChildren().append(device);
+        }
+    }
+    m_root->setPopulated();
+}
+
+void MTPFileModel::populate(const NodeContainer &container)
+{
+    if (!container.m_content->isEmpty()) {
+        for (WPDManager::Item &item : *container.m_content) {
+            MTPFileNode *child = new MTPFileNode(item.m_name, TypeConversion(item.m_type), 0, FormatDate(item.m_date), m_iconProvider.icon(IconConversion(item.m_type)), container.m_node);
+            if (child) {
+                container.m_node->getChildren().insert(MTPFileNodePathKey(item.m_name), child);
+                container.m_node->getVisibleChildren().append(item.m_name);
+            }
+        }
+    }
+    container.m_node->setPopulated();
+
+    int row = container.m_node->getParent()->visibleLocation(container.m_node->getName());
+    QModelIndex index = createIndex(row, 0, container.m_node);
+
+    emit dataChanged(index, index, QVector<int>(1, Qt::ForegroundRole));
+
+    delete container.m_content;
+
+    //SetRootPath management
+    if (!m_rootStack.isEmpty()) {
+        const QString &fileName = m_rootStack.top();
+        if (container.m_node->getName() == fileName) {
+            m_rootStack.pop();
+            if (m_rootStack.isEmpty())
+                emit rootPathChanged(index);
+            else if (m_fetcher) {
+                MTPFileNode *child = container.m_node->getChildren().value(m_rootStack.top());
+                if (child)
+                    m_fetcher->addToFetch(child);
+                else
+                    m_rootStack.clear();
+            }
+        }
+    }
+}
+
+QModelIndex MTPFileModel::parent(MTPFileNode & child) const
+{
+    MTPFileNode *parentNode = child.getParent();
+    if (parentNode == nullptr || parentNode == m_root)
+        return QModelIndex();
+
+    MTPFileNode *grandParentNode = parentNode->getParent();
+    int visualRow = grandParentNode->visibleLocation(grandParentNode->getChildren().value(parentNode->getName())->getName());
+    if (visualRow == -1)
+        return QModelIndex();
+
+    return createIndex(visualRow, 0, parentNode);
+}
+
 MTPFileNode * MTPFileModel::node(const QModelIndex & index) const
 {
     if (!index.isValid())
@@ -183,42 +258,6 @@ MTPFileNode * MTPFileModel::node(const QModelIndex & index) const
 
     MTPFileNode *indexNode = static_cast<MTPFileNode *>(index.internalPointer());
     return indexNode;
-}
-
-void MTPFileModel::getDevices()
-{
-    QStringList deviceList;
-    if (m_WPDManager)
-        m_WPDManager->getDevices(deviceList);
-    for (QString device : deviceList) {
-        MTPFileNode *node = new MTPFileNode(device, MTPFileNode::DEVICE, 0, "", m_iconProvider.icon(QFileIconProvider::Computer), m_root);
-
-        if (node) {
-            m_root->getChildren().insert(MTPFileNodePathKey(device), node);
-            m_root->getVisibleChildren().append(device);
-        }
-
-        m_root->setPopulated();
-    }
-}
-
-void MTPFileModel::populate(MTPFileNode & node) const
-{
-    if (node.isPopulated())
-        return;
-
-    std::vector<WPDManager::Item> content;
-    if (m_WPDManager && m_WPDManager->getContent(node.getPath(), content)) {
-        for (WPDManager::Item &item : content) {
-            MTPFileNode *child = new MTPFileNode(item.m_name, TypeConversion(item.m_type), 0, FormatDate(item.m_date), m_iconProvider.icon(IconConversion(item.m_type)), &node); //TODO SET REAL VALUES FOR DATE AND SIZE
-            if (child) {
-                node.getChildren().insert(MTPFileNodePathKey(item.m_name), child);
-                node.getVisibleChildren().append(item.m_name);
-            }
-        }
-    }
-
-    node.setPopulated();
 }
 
 MTPFileNode::Type MTPFileModel::TypeConversion(WPDManager::ItemType type)

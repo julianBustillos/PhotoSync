@@ -62,6 +62,9 @@
     <ClCompile Include="WPDManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MTPFileFetcher.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FileManager.h">
@@ -73,9 +76,6 @@
     <ClInclude Include="easyexif\exif.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MTPFileModel.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="MTPFileNode.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -85,9 +85,18 @@
     <ClInclude Include="WPDManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="NodeContainer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="FileExplorerDialog.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="MTPFileFetcher.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="MTPFileModel.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

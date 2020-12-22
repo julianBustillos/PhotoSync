@@ -18,6 +18,9 @@ public:
     void setDirectory(QString directory);
     QString getDirectory();
 
+public slots:
+    void rootPathChanged(const QModelIndex &rootPathIndex);
+
 private:
     void chooseDirectory();
 

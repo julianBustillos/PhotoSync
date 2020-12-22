@@ -36,7 +36,7 @@ bool WPDManager::getDevices(QStringList& devices)
     return SUCCEEDED(m_hr_init);
 }
 
-bool WPDManager::getContent(QString path, std::vector<Item>& content)
+bool WPDManager::getContent(QString path, QVector<Item>& content)
 {
     bool foundPath = false;
     QStringList splittedPath = path.split("/");
@@ -56,7 +56,7 @@ bool WPDManager::getContent(QString path, std::vector<Item>& content)
                 populate(*node, deviceIter->second.m_content, deviceIter->second.m_properties);
                 content.reserve(node->m_children.size());
                 for (auto &child : node->m_children)
-                    content.emplace_back(child.first, child.second->m_type, QString::fromWCharArray(child.second->m_date));
+                    content.append(Item(child.first, child.second->m_type, QString::fromWCharArray(child.second->m_date)));
             }
         }
     }

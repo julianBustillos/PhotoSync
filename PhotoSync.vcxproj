@@ -100,6 +100,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="MTPFileFetcher.cpp" />
     <ClCompile Include="WPDManager.cpp" />
     <QtRcc Include="PhotoSync.qrc" />
     <QtUic Include="FileExplorerDialog.ui" />
@@ -117,9 +118,11 @@
   <ItemGroup>
     <ClInclude Include="easyexif\exif.h" />
     <ClInclude Include="FileData.h" />
-    <ClInclude Include="MTPFileModel.h" />
+    <QtMoc Include="MTPFileFetcher.h" />
+    <QtMoc Include="MTPFileModel.h" />
     <ClInclude Include="MTPFileNode.h" />
     <ClInclude Include="MTPFileNodePathKey.h" />
+    <ClInclude Include="NodeContainer.h" />
     <ClInclude Include="WPDManager.h" />
     <QtMoc Include="FileExplorerDialog.h" />
     <ClInclude Include="FileManager.h" />

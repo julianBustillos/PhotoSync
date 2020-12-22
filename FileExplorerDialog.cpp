@@ -9,13 +9,14 @@ FileExplorerDialog::FileExplorerDialog(QWidget *parent)
     //m_ui.fileTreeView->setModel(&m_fileSystemModel);
     m_ui.fileTreeView->setModel(&m_MTPFileModel);
 
-    // TODO !! set only directories for filesystemmodel
+    // TODO: set only directories for filesystemmodel
     /*
     m_fileDialog.setFileMode(QFileDialog::Directory);
     m_fileDialog.setOption(QFileDialog::DontUseNativeDialog, true);
     m_fileDialog.setOption(QFileDialog::ShowDirsOnly, false);
     */
 
+    QObject::connect(&m_MTPFileModel, &MTPFileModel::rootPathChanged, this, &FileExplorerDialog::rootPathChanged);
     QObject::connect(m_ui.chooseButton, &QPushButton::clicked, this, &FileExplorerDialog::chooseDirectory);
 }
 
@@ -26,17 +27,22 @@ FileExplorerDialog::~FileExplorerDialog()
 void FileExplorerDialog::setDirectory(QString directory)
 {
     //QModelIndex dirIndex = m_fileSystemModel.setRootPath(directory);
-    QModelIndex dirIndex = m_MTPFileModel.setRootPath(directory);
+    m_MTPFileModel.setRootPath(directory);
 
-    m_directory = dirIndex.isValid() ? directory : "";
-    m_ui.fileTreeView->collapseAll();
-    m_ui.fileTreeView->scrollTo(dirIndex);
-    m_ui.fileTreeView->selectionModel()->select(dirIndex, QItemSelectionModel::Select);
 }
 
 QString FileExplorerDialog::getDirectory()
 {
     return m_directory;
+}
+
+void FileExplorerDialog::rootPathChanged(const QModelIndex &rootPathIndex)
+{
+
+    //m_directory = rootPathIndex.isValid() ? directory : ""; //TODO get directory from index
+    m_ui.fileTreeView->collapseAll();
+    m_ui.fileTreeView->scrollTo(rootPathIndex, QAbstractItemView::PositionAtCenter);
+    m_ui.fileTreeView->setCurrentIndex(rootPathIndex);
 }
 
 void FileExplorerDialog::chooseDirectory()

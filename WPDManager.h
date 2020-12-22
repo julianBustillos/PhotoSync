@@ -3,7 +3,7 @@
 #include <wrl/client.h>
 #include <PortableDeviceApi.h> 
 #include <QStringList>
-#include <vector>
+#include <QVector>
 #include <map>
 
 #define CLIENT_NAME         L"WPD Manager"
@@ -36,7 +36,7 @@ public:
 
 public:
     bool getDevices(QStringList& devices);
-    bool getContent(QString path, std::vector<Item>& content);
+    bool getContent(QString path, QVector<Item>& content);
 
 private:
     struct DeviceNode
