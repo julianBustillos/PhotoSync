@@ -40,7 +40,7 @@ QString FileExplorerDialog::getDirectory()
 void FileExplorerDialog::rootPathChanged(const QModelIndex &rootPathIndex)
 {
 
-    //m_directory = rootPathIndex.isValid() ? directory : ""; //TODO get directory from index
+    m_directory = m_MTPFileModel.filePath(rootPathIndex);
     m_ui.fileTreeView->collapseAll();
     m_ui.fileTreeView->scrollTo(rootPathIndex);
     m_ui.fileTreeView->setCurrentIndex(rootPathIndex);
