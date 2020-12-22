@@ -8,6 +8,7 @@ FileExplorerDialog::FileExplorerDialog(QWidget *parent)
     m_ui.setupUi(this);
     //m_ui.fileTreeView->setModel(&m_fileSystemModel);
     m_ui.fileTreeView->setModel(&m_MTPFileModel);
+    m_ui.fileTreeView->setColumnWidth(0, 300);
 
     // TODO: set only directories for filesystemmodel
     /*
@@ -41,7 +42,7 @@ void FileExplorerDialog::rootPathChanged(const QModelIndex &rootPathIndex)
 
     //m_directory = rootPathIndex.isValid() ? directory : ""; //TODO get directory from index
     m_ui.fileTreeView->collapseAll();
-    m_ui.fileTreeView->scrollTo(rootPathIndex, QAbstractItemView::PositionAtCenter);
+    m_ui.fileTreeView->scrollTo(rootPathIndex);
     m_ui.fileTreeView->setCurrentIndex(rootPathIndex);
 }
 
