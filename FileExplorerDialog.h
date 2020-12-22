@@ -2,8 +2,7 @@
 
 #include <QDialog>
 #include "ui_FileExplorerDialog.h"
-#include <QFileSystemModel>
-#include "MTPFileModel.h"
+#include "AggregableItemModel.h"
 
 
 class FileExplorerDialog : public QDialog
@@ -27,6 +26,7 @@ private:
 private:
     Ui::FileExplorerDialogClass m_ui;
     QString m_directory;
-    QFileSystemModel m_fileSystemModel;
-    MTPFileModel m_MTPFileModel;
+    //QFileSystemModel m_fileSystemModel; //TODO: REMOVE
+    //MTPFileModel m_MTPFileModel; //TODO: REMOVE
+    AggregableItemModel *m_aggregableModel;
 };

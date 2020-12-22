@@ -1,14 +1,13 @@
 #pragma once
-#include <QAbstractItemModel>
-#include <QAbstractItemView>
 #include <QFileIconProvider>
 #include <QStack>
+#include "AggregableItemModel.h"
 #include "MTPFileFetcher.h"
 #include "MTPFileNode.h"
 #include "NodeContainer.h"
 
 
-class MTPFileModel : public QAbstractItemModel
+class MTPFileModel : public AggregableItemModel
 {
     Q_OBJECT
 
@@ -17,21 +16,18 @@ public:
     ~MTPFileModel();
 
 public:
-    void setRootPath(const QString &newPath);
-    QString filePath(const QModelIndex &index) const;
-    QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const;
-    QModelIndex parent(const QModelIndex &child) const;
-    int rowCount(const QModelIndex &parent = QModelIndex()) const;
-    int columnCount(const QModelIndex &parent = QModelIndex()) const;
-    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
-    QVariant headerData(int section, Qt::Orientation orientation, int role) const;
+    virtual void setRootPath(const QString &newPath);
+    virtual QString filePath(const QModelIndex &index) const;
+    virtual QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const;
+    virtual QModelIndex parent(const QModelIndex &child) const;
+    virtual int rowCount(const QModelIndex &parent = QModelIndex()) const;
+    virtual int columnCount(const QModelIndex &parent = QModelIndex()) const;
+    virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
+    virtual QVariant headerData(int section, Qt::Orientation orientation, int role) const;
 
 public slots:
     void addDevices(const QStringList &devices);
     void populate(const NodeContainer &container);
-
-signals:
-    void rootPathChanged(const QModelIndex &rootPathIndex);
 
 private:
     QModelIndex parent(MTPFileNode &child) const;

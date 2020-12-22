@@ -99,6 +99,9 @@
     <QtMoc Include="MTPFileModel.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="AggregableItemModel.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="FileExplorerDialog.ui">

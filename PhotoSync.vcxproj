@@ -116,6 +116,7 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <QtMoc Include="AggregableItemModel.h" />
     <ClInclude Include="easyexif\exif.h" />
     <ClInclude Include="FileData.h" />
     <QtMoc Include="MTPFileFetcher.h" />

@@ -3,7 +3,7 @@
 
 
 MTPFileModel::MTPFileModel(QObject * parent) :
-    QAbstractItemModel(parent)
+    AggregableItemModel(parent)
 {
     m_root = new MTPFileNode();
     m_fetcher = new MTPFileFetcher(this);
