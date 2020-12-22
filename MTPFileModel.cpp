@@ -216,7 +216,7 @@ void MTPFileModel::populate(const NodeContainer &container)
     QModelIndex index = createIndex(row, 0, container.m_node);
     QModelIndex indexLast = createIndex(row, 3, container.m_node);
 
-    emit dataChanged(index, indexLast, QVector<int>(1, Qt::ForegroundRole));
+    emit dataChanged(index, indexLast);
 
     delete container.m_content;
 
