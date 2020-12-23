@@ -31,6 +31,7 @@ public:
     inline MTPFileNode *getParent();
     inline QHash<MTPFileNodePathKey, MTPFileNode *> &getChildren();
     inline QList<QString> &getVisibleChildren();
+    inline bool isDir();
     inline bool isFetching();
     inline bool isPopulated();
     inline void setFetching();
@@ -102,6 +103,10 @@ inline QHash<MTPFileNodePathKey, MTPFileNode*>& MTPFileNode::getChildren()
 inline QList<QString>& MTPFileNode::getVisibleChildren()
 {
     return m_visibleChildren;
+}
+inline bool MTPFileNode::isDir()
+{
+    return m_type == DEVICE || m_type == DRIVE || m_type== FOLDER;
 }
 inline bool MTPFileNode::isFetching()
 {

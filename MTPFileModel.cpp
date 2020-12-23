@@ -78,7 +78,9 @@ QModelIndex MTPFileModel::index(int row, int column, const QModelIndex & parent)
 
     const QString &childName = parentNode->getVisibleChildren().at(row);
     MTPFileNode *indexNode = parentNode->getChildren().value(childName);
-    m_fetcher->addToFetch(indexNode);
+    if (m_fetcher)
+        m_fetcher->addToFetch(indexNode);
+
     return createIndex(row, column, indexNode);
 }
 
@@ -91,6 +93,29 @@ QModelIndex MTPFileModel::parent(const QModelIndex & child) const
     if (indexNode)
         return parent(*indexNode);
     return QModelIndex();
+}
+
+bool MTPFileModel::hasChildren(const QModelIndex & parent) const
+{
+    if (parent.column() > 0)
+        return false;
+
+    if (!parent.isValid())
+        return true;
+
+    return (node(parent)->isDir());
+}
+
+bool MTPFileModel::canFetchMore(const QModelIndex & parent) const
+{
+    return (!node(parent)->isPopulated());
+}
+
+void MTPFileModel::fetchMore(const QModelIndex & parent)
+{
+    MTPFileNode *parentNode = node(parent);
+    if (m_fetcher && !parentNode->isPopulated())
+        m_fetcher->addToFetch(parentNode);
 }
 
 int MTPFileModel::rowCount(const QModelIndex & parent) const
