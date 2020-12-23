@@ -65,6 +65,15 @@
     <ClCompile Include="MTPFileFetcher.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="FileSystemProxyModel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="QIdentityProxyModelCOPY.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AggregableProxyModel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FileManager.h">
@@ -88,6 +97,9 @@
     <ClInclude Include="NodeContainer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="AggregableProxyModel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="FileExplorerDialog.h">
@@ -100,6 +112,12 @@
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="AggregableItemModel.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="FileSystemProxyModel.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="QIdentityProxyModelCOPY.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

@@ -100,6 +100,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AggregableProxyModel.cpp" />
+    <ClCompile Include="FileSystemProxyModel.cpp" />
     <ClCompile Include="MTPFileFetcher.cpp" />
     <ClCompile Include="WPDManager.cpp" />
     <QtRcc Include="PhotoSync.qrc" />
@@ -117,10 +119,12 @@
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="AggregableItemModel.h" />
+    <ClInclude Include="AggregableProxyModel.h" />
     <ClInclude Include="easyexif\exif.h" />
     <ClInclude Include="FileData.h" />
     <QtMoc Include="MTPFileFetcher.h" />
     <QtMoc Include="MTPFileModel.h" />
+    <QtMoc Include="FileSystemProxyModel.h" />
     <ClInclude Include="MTPFileNode.h" />
     <ClInclude Include="MTPFileNodePathKey.h" />
     <ClInclude Include="NodeContainer.h" />

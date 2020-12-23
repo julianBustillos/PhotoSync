@@ -26,7 +26,5 @@ private:
 private:
     Ui::FileExplorerDialogClass m_ui;
     QString m_directory;
-    //QFileSystemModel m_fileSystemModel; //TODO: REMOVE
-    //MTPFileModel m_MTPFileModel; //TODO: REMOVE
     AggregableItemModel *m_aggregableModel;
 };
