@@ -32,6 +32,7 @@ FileExplorerDialog::~FileExplorerDialog()
 {
     if (m_aggregableModel)
         delete m_aggregableModel;
+    m_aggregableModel = nullptr;
 }
 
 void FileExplorerDialog::setDirectory(QString directory)

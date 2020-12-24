@@ -18,9 +18,11 @@ MTPFileModel::~MTPFileModel()
 {
     if (m_root)
         delete m_root;
+    m_root = nullptr;
 
     if (m_fetcher) 
         delete m_fetcher;
+    m_fetcher = nullptr;
 }
 
 void MTPFileModel::setRootPath(const QString & newPath)
@@ -243,8 +245,6 @@ void MTPFileModel::populate(const NodeContainer &container)
 
     emit dataChanged(index, indexLast);
 
-    delete container.m_content;
-
     //SetRootPath management
     if (!m_rootStack.isEmpty()) {
         const QString &fileName = m_rootStack.top();
@@ -261,6 +261,8 @@ void MTPFileModel::populate(const NodeContainer &container)
             }
         }
     }
+
+    delete container.m_content;
 }
 
 QModelIndex MTPFileModel::parent(MTPFileNode & child) const

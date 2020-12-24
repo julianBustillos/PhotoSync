@@ -245,6 +245,7 @@ WPDManager::DeviceNode::~DeviceNode()
 {
     if (m_objectID)
         delete[] m_objectID;
+    m_objectID = nullptr;
 
     for (auto &child : m_children) {
         if (child.second)
@@ -265,6 +266,7 @@ WPDManager::DeviceData::~DeviceData()
 {
     if (m_deviceID)
         delete[] m_deviceID;
+    m_deviceID = nullptr;
 }
 
 WPDManager::Item::Item(QString name, ItemType type, QString date) :

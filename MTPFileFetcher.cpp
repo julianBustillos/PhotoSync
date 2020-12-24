@@ -18,6 +18,7 @@ MTPFileFetcher::~MTPFileFetcher()
 
     if (m_WPDManager) //TODO: CHANGE
         delete m_WPDManager;
+    m_WPDManager = nullptr;
 }
 
 void MTPFileFetcher::fetchDevices()

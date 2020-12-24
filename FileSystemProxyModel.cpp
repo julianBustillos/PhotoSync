@@ -12,7 +12,9 @@ FileSystemProxyModel::FileSystemProxyModel(QObject *parent) :
 
 FileSystemProxyModel::~FileSystemProxyModel()
 {
-    delete m_model;
+    if (m_model)
+        delete m_model;
+    m_model = nullptr;
 }
 
 void FileSystemProxyModel::setRootPath(const QString & newPath)
