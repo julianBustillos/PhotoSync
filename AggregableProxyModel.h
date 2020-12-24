@@ -11,18 +11,18 @@ public:
     virtual void setRootPath(const QString &newPath) = 0;
     virtual QString filePath(const QModelIndex &index) const = 0;
 
-    QModelIndex	index(int row, int column, const QModelIndex &parent = QModelIndex()) const override;
-    QModelIndex	parent(const QModelIndex &index) const override;
+    virtual QModelIndex	index(int row, int column, const QModelIndex &parent = QModelIndex()) const override;
+    virtual QModelIndex	parent(const QModelIndex &index) const override;
 
-    bool hasChildren(const QModelIndex &parent = QModelIndex()) const override;
-    bool canFetchMore(const QModelIndex &parent) const override;
-    void fetchMore(const QModelIndex &parent) override;
+    virtual bool hasChildren(const QModelIndex &parent = QModelIndex()) const override;
+    virtual bool canFetchMore(const QModelIndex &parent) const override;
+    virtual void fetchMore(const QModelIndex &parent) override;
 
-    int	rowCount(const QModelIndex &parent = QModelIndex()) const override;
-    int	columnCount(const QModelIndex &parent = QModelIndex()) const override;
+    virtual int	rowCount(const QModelIndex &parent = QModelIndex()) const override;
+    virtual int	columnCount(const QModelIndex &parent = QModelIndex()) const override;
 
-    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
-    QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
+    virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+    virtual QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
 
 protected:
     virtual QAbstractItemModel *model() const = 0;
