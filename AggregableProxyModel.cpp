@@ -22,32 +22,38 @@ QModelIndex AggregableProxyModel::parent(const QModelIndex & index) const
 
 bool AggregableProxyModel::hasChildren(const QModelIndex & parent) const
 {
-    return model()->hasChildren(mapToSource(parent));
+    const QModelIndex sourceParent = mapToSource(parent);
+    return model()->hasChildren(sourceParent);
 }
 
 bool AggregableProxyModel::canFetchMore(const QModelIndex & parent) const
 {
-    return model()->canFetchMore(mapToSource(parent));
+    const QModelIndex sourceParent = mapToSource(parent);
+    return model()->canFetchMore(sourceParent);
 }
 
 void AggregableProxyModel::fetchMore(const QModelIndex & parent)
 {
-    model()->fetchMore(mapToSource(parent));
+    const QModelIndex sourceParent = mapToSource(parent);
+    model()->fetchMore(sourceParent);
 }
 
 int AggregableProxyModel::rowCount(const QModelIndex & parent) const
 {
-    return model()->rowCount(mapToSource(parent));
+    const QModelIndex sourceParent = mapToSource(parent);
+    return model()->rowCount(sourceParent);
 }
 
 int AggregableProxyModel::columnCount(const QModelIndex & parent) const
 {
-    return model()->columnCount(mapToSource(parent));
+    const QModelIndex sourceParent = mapToSource(parent);
+    return model()->columnCount(sourceParent);
 }
 
 QVariant AggregableProxyModel::data(const QModelIndex & index, int role) const
 {
-    return model()->data(mapToSource(index), role);
+    const QModelIndex sourceIndex = mapToSource(index);
+    return model()->data(sourceIndex, role);
 }
 
 QVariant AggregableProxyModel::headerData(int section, Qt::Orientation orientation, int role) const
