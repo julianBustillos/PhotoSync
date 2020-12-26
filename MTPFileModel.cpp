@@ -43,7 +43,6 @@ void MTPFileModel::setRootPath(const QString & newPath)
 
     if (!node) {
         m_rootStack.clear();
-        emit rootPathChanged(QModelIndex());
         return;
     }
 
@@ -151,7 +150,7 @@ QVariant MTPFileModel::data(const QModelIndex & index, int role) const
     case Qt::DisplayRole:
         switch (index.column()) {
         case 0: return node(index)->getName();
-        case 1: return node(index)->getSize() ? QString::number(node(index)->getSize()) : "";
+        case 1: return node(index)->getSize() ? QString::number(node(index)->getSize()) : QString();
         case 2: return node(index)->getType();
         case 3: return node(index)->getLastModified();
         default:
@@ -216,7 +215,7 @@ QVariant MTPFileModel::headerData(int section, Qt::Orientation orientation, int 
 void MTPFileModel::addDevices(const QStringList &devices)
 {
     for (const QString &device : devices) {
-        MTPFileNode *node = new MTPFileNode(device, MTPFileNode::DEVICE, 0, "", m_iconProvider.icon(QFileIconProvider::Computer), m_root);
+        MTPFileNode *node = new MTPFileNode(device, MTPFileNode::DEVICE, 0, QString(), m_iconProvider.icon(QFileIconProvider::Computer), m_root);
 
         if (node) {
             m_root->getChildren().insert(MTPFileNodePathKey(device), node);
@@ -318,7 +317,7 @@ QFileIconProvider::IconType MTPFileModel::IconConversion(WPDManager::ItemType ty
 
 QString MTPFileModel::FormatDate(QString date)
 {
-    QString newDate = "";
+    QString newDate = QString();
 
     if (date.size() == 23) {
         QVector<QStringRef> YMD = QStringRef(&date, 0, 10).split("/");

@@ -37,7 +37,7 @@ private slots:
     void sourceRowsAboutToBeInserted(const QModelIndex&, int, int);
     void sourceRowsInserted(const QModelIndex&, int, int);
 
-private:
-    QList<QPersistentModelIndex> layoutChangePersistentIndexes;
-    QModelIndexList proxyIndexes;
+/*private:
+    QList<QPersistentModelIndex> m_layoutChangePersistentIndexes;
+    QModelIndexList m_proxyIndexes;*/
 };

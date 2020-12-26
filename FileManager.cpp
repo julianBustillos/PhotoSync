@@ -32,7 +32,7 @@ void FileManager::run()
         std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
 
         if (m_runCount++)
-            m_ui.textEditOutput->append("");
+            m_ui.textEditOutput->append(QString());
 
         m_ui.textEditOutput->append("FROM : " + m_ui.importEdit->text());
         m_ui.textEditOutput->append("TO      : " + m_ui.exportEdit->text());

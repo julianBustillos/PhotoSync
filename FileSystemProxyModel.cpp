@@ -7,7 +7,7 @@ FileSystemProxyModel::FileSystemProxyModel(QObject *parent) :
 {
     m_model = new QFileSystemModel(parent);
     connectSignals(*m_model);
-    m_model->setRootPath("");
+    m_model->setRootPath(QString());
 }
 
 FileSystemProxyModel::~FileSystemProxyModel()
@@ -19,9 +19,10 @@ FileSystemProxyModel::~FileSystemProxyModel()
 
 void FileSystemProxyModel::setRootPath(const QString & newPath)
 {
-    m_model->setRootPath("");
+    m_model->setRootPath(QString());
     const QModelIndex sourceIndex = m_model->setRootPath(newPath);
-    emit rootPathChanged(mapFromSource(sourceIndex));
+    if (sourceIndex.isValid())
+        emit rootPathChanged(mapFromSource(sourceIndex));
 }
 
 QString FileSystemProxyModel::filePath(const QModelIndex & index) const

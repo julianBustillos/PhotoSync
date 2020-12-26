@@ -1,4 +1,5 @@
 #include "FileExplorerDialog.h"
+#include "AggregateModel.h"
 #include "MTPFileModel.h"
 #include "FileSystemProxyModel.h"
 #include <QModelIndex>
@@ -11,9 +12,10 @@ FileExplorerDialog::FileExplorerDialog(QWidget *parent)
     : QDialog(parent)
 {
     m_ui.setupUi(this);
-    //m_aggregableModel = new MTPFileModel(this);
-    m_aggregableModel = new FileSystemProxyModel(this);
-    //m_aggregableModel = new QIdentityProxyModelCOPY(this);
+    AggregateModel *aggregateModel = new AggregateModel(this);
+    aggregateModel->addModel(new FileSystemProxyModel(this));
+    aggregateModel->addModel(new MTPFileModel(this));
+    m_aggregableModel = aggregateModel;
     m_ui.fileTreeView->setModel(m_aggregableModel);
     m_ui.fileTreeView->setColumnWidth(0, 300);
 
@@ -37,6 +39,7 @@ FileExplorerDialog::~FileExplorerDialog()
 
 void FileExplorerDialog::setDirectory(QString directory)
 {
+    m_ui.fileTreeView->collapseAll();
     if (m_aggregableModel)
         m_aggregableModel->setRootPath(directory);
 }
@@ -49,7 +52,6 @@ QString FileExplorerDialog::getDirectory()
 void FileExplorerDialog::rootPathChanged(const QModelIndex &rootPathIndex)
 {
     m_directory = m_aggregableModel->filePath(rootPathIndex);
-    m_ui.fileTreeView->collapseAll();
     m_ui.fileTreeView->scrollTo(rootPathIndex);
     m_ui.fileTreeView->setCurrentIndex(rootPathIndex);
 }

@@ -74,6 +74,12 @@
     <ClCompile Include="AggregableProxyModel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="AggregateModel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AggregateRootModel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FileManager.h">
@@ -100,6 +106,9 @@
     <ClInclude Include="AggregableProxyModel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="AggregateModel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="FileExplorerDialog.h">
@@ -118,6 +127,9 @@
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="QIdentityProxyModelCOPY.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="AggregateRootModel.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

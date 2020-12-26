@@ -16,7 +16,7 @@ QModelIndex AggregableProxyModel::index(int row, int column, const QModelIndex &
 QModelIndex AggregableProxyModel::parent(const QModelIndex & index) const
 {
     const QModelIndex sourceIndex = mapToSource(index);
-    const QModelIndex sourceParent = sourceIndex.parent();
+    const QModelIndex sourceParent = model()->parent(sourceIndex);
     return mapFromSource(sourceParent);
 }
 
@@ -58,6 +58,7 @@ QVariant AggregableProxyModel::data(const QModelIndex & index, int role) const
 
 QVariant AggregableProxyModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
+    mapToSource(QModelIndex());
     return model()->headerData(section, orientation, role);
 }
 
@@ -84,22 +85,22 @@ void AggregableProxyModel::sourceLayoutAboutToBeChanged(const QList<QPersistentM
 
     emit layoutAboutToBeChanged(parents, hint);
 
-    const auto proxyPersistentIndexes = persistentIndexList();
+    /*const auto proxyPersistentIndexes = persistentIndexList();
     for (const QModelIndex &proxyPersistentIndex : proxyPersistentIndexes) {
-        proxyIndexes << proxyPersistentIndex;
+        m_proxyIndexes << proxyPersistentIndex;
         const QPersistentModelIndex srcPersistentIndex = mapToSource(proxyPersistentIndex);
-        layoutChangePersistentIndexes << srcPersistentIndex;
-    }
+        m_layoutChangePersistentIndexes << srcPersistentIndex;
+    }*/
 }
 
 void AggregableProxyModel::sourceLayoutChanged(const QList<QPersistentModelIndex> &sourceParents, QAbstractItemModel::LayoutChangeHint hint)
 {
-    for (int i = 0; i < proxyIndexes.size(); ++i) {
-        changePersistentIndex(proxyIndexes.at(i), mapFromSource(layoutChangePersistentIndexes.at(i)));
+    /*for (int i = 0; i < m_proxyIndexes.size(); ++i) {
+        changePersistentIndex(m_proxyIndexes.at(i), mapFromSource(m_layoutChangePersistentIndexes.at(i)));
     }
 
-    layoutChangePersistentIndexes.clear();
-    proxyIndexes.clear();
+    m_layoutChangePersistentIndexes.clear();
+    m_proxyIndexes.clear();*/
 
     QList<QPersistentModelIndex> parents;
     parents.reserve(sourceParents.size());
