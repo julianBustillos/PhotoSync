@@ -14,6 +14,12 @@ PhotoSync::PhotoSync(QWidget *parent)
     QObject::connect(m_ui.positivePushButton, &QToolButton::clicked, this, &PhotoSync::run);
     QObject::connect(m_ui.negativePushButton, &QToolButton::clicked, this, &PhotoSync::close);
 
+    //DEBUG
+    //m_ui.importEdit->setText("Juju S8/Phone/Pictures");
+    m_ui.importEdit->setText("C:/Users/Julian Bustillos/Downloads/IMPORT_PHOTOSYNC");
+    m_ui.exportEdit->setText("C:/Users/Julian Bustillos/Downloads/EXPORT_PHOTOSYNC");
+    //DEBUG
+
 PhotoSync::~PhotoSync()
 {
 }

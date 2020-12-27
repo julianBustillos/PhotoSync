@@ -20,11 +20,17 @@ private :
     void askImportFolder();
     void askExportFolder();
     void run();
-    void cancel();
+
+private slots:
+    void createWarning(QString title, QString message);
+    void setProgressBarValue(int value);
+    void setProgressBarMaximum(int maximum);
+    void appendOutput(QString output);
+    void finish();
 
 private:
     Ui::PhotoSyncClass m_ui;
-    FileExplorerDialog m_dialog; //Todo rename ??
+    FileExplorerDialog m_dialog; //TODO: rename ??
     FileManager m_fileManager;
     QString m_positiveDefaultText;
 };

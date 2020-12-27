@@ -134,7 +134,7 @@
     <ClInclude Include="NodeContainer.h" />
     <ClInclude Include="WPDManager.h" />
     <QtMoc Include="FileExplorerDialog.h" />
-    <ClInclude Include="FileManager.h" />
+    <QtMoc Include="FileManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

@@ -1,6 +1,4 @@
 #include "FileManager.h"
-#include "PhotoSync.h"
-#include <QMessageBox>
 #include <QDir>
 #include <QDirIterator>
 #include <QCryptographicHash>
@@ -13,33 +11,43 @@ extern "C"
 }
 
 
-FileManager::FileManager(QWidget *parent, Ui::PhotoSyncClass &ui) :
-    m_runCount(0), m_parent(parent), m_ui(ui)
+FileManager::FileManager(QObject *parent) :
+    QThread(parent), m_importPath(""), m_exportPath(""), m_extensions({ "*.jpg" , "*.mp4" }), m_runCount(0), m_cancelled(false)
 {
-    m_extensions << "*.jpg" << "*.mp4";
 }
 
 FileManager::~FileManager()
 {
 }
 
+void FileManager::setPaths(const QString & importPath, const QString & exportPath)
+{
+    m_importPath = importPath;
+    m_exportPath = exportPath;
+}
+
+void FileManager::cancel()
+{
+    m_cancelled.storeRelaxed(true);
+}
+
 void FileManager::run()
 {
-    m_ui.progressBar->setValue(0);
-    m_ui.progressBar->setMaximum(100);
+    m_cancelled.storeRelaxed(false);
+    emit progressBarValue(m_progress = 0);
+    emit progressBarMaximum(100);
 
     if (checkDir()) {
         std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
 
         if (m_runCount++)
-            m_ui.textEditOutput->append(QString());
+            emit output(QString());
 
-        m_ui.textEditOutput->append("FROM : " + m_ui.importEdit->text());
-        m_ui.textEditOutput->append("TO      : " + m_ui.exportEdit->text());
+        emit output("FROM : " + m_importPath);
+        emit output("TO      : " + m_exportPath);
         
         m_duplicateCount = 0;
         m_copyCount = 0;
-        m_canceled = false;
 
         buildExistingFileData();
         buildImportFileData();
@@ -59,21 +67,21 @@ void FileManager::run()
 
 bool FileManager::checkDir()
 {
-    if (m_ui.importEdit->text().isEmpty()) {
-        QMessageBox::warning(m_parent, "Path error", "Import path is empty !");
+    if (m_importPath.isEmpty()) {
+        emit warning("Path error", "Import path is empty !");
         return false;
     }
-    if (!QDir(m_ui.importEdit->text()).exists()) {
-        QMessageBox::warning(m_parent, "Path error", "Import path : \"" + m_ui.importEdit->text() + "\" not found !");
+    if (!QDir(m_importPath).exists()) {
+        emit warning("Path error", "Import path : \"" + m_importPath + "\" not found !");
         return false;
     }
 
-    if (m_ui.exportEdit->text().isEmpty()) {
-        QMessageBox::warning(m_parent, "Path error", "Export path is empty !");
+    if (m_exportPath.isEmpty()) {
+        emit warning("Path error", "Export path is empty !");
         return false;
     }
-    if (!QDir(m_ui.exportEdit->text()).exists()) {
-        QMessageBox::warning(m_parent, "Path error", "Export path : \"" + m_ui.exportEdit->text() + "\" not found !");
+    if (!QDir(m_exportPath).exists()) {
+        emit warning("Path error", "Export path : \"" + m_exportPath + "\" not found !");
         return false;
     }
 
@@ -126,28 +134,21 @@ bool FileManager::getDate(const QFileInfo & fileInfo, Date &date)
     return !readError;
 }
 
-void FileManager::cancel()
-{
-    m_canceled = true;
-}
-
 void FileManager::buildExistingFileData()
 {
-    QDirIterator it(m_ui.exportEdit->text(), m_extensions, QDir::Files, QDirIterator::Subdirectories);
+    QDirIterator it(m_exportPath, m_extensions, QDir::Files, QDirIterator::Subdirectories);
     while (it.hasNext()) {
-        if (m_canceled)
+        if (m_cancelled.loadRelaxed())
             return;
 
         QFileInfo fileInfo(it.next());
         m_existingFiles[fileInfo.size()].emplace_back(fileInfo.filePath());
-        if (m_canceled)
-            return;
     }
 }
 
 void FileManager::buildImportFileData()
 {
-    QDirIterator it(m_ui.importEdit->text(), m_extensions, QDir::Files, QDirIterator::Subdirectories);
+    QDirIterator it(m_importPath, m_extensions, QDir::Files, QDirIterator::Subdirectories);
     QStringList importFilePaths;
 
     while (it.hasNext())
@@ -155,12 +156,12 @@ void FileManager::buildImportFileData()
 
     size_t progressSize = importFilePaths.size();
     if (progressSize == 0)
-        m_ui.progressBar->setValue(100);
+        emit progressBarValue(m_progress = 100);
     else
-        m_ui.progressBar->setMaximum(progressSize);
+        emit progressBarMaximum(progressSize);
 
     for (QString filePath : importFilePaths) {
-        if (m_canceled)
+        if (m_cancelled.loadRelaxed())
             return;
 
         bool copyFile = true;
@@ -194,7 +195,7 @@ void FileManager::buildImportFileData()
                 if (newFileChecksum == fileData.m_checksum) {
                     copyFile = false;
                     m_duplicateCount++;
-                    m_ui.progressBar->setValue(m_ui.progressBar->value() + 1);
+                    emit progressBarValue(++m_progress);
                     break;
                 }
             }
@@ -215,14 +216,14 @@ void FileManager::buildImportFileData()
 
 void FileManager::exportFiles()
 {
-    QDir exportPath(m_ui.exportEdit->text());
+    QDir exportPath(m_exportPath);
 
     for (auto &date : m_DirectoriesToCreate) {
         exportPath.mkpath(date.toQString());
     }
 
     for (auto &file : m_filesToCopy) {
-        if (m_canceled)
+        if (m_cancelled.loadRelaxed())
             return;
 
         QFileInfo importFileInfo(file.m_path);
@@ -241,7 +242,7 @@ void FileManager::exportFiles()
             m_copyCount++;
         else
             m_importErrors.insert(importFileInfo.filePath());
-        m_ui.progressBar->setValue(m_ui.progressBar->value() + 1);
+        emit progressBarValue(++m_progress);
     }
 
 }
@@ -249,20 +250,20 @@ void FileManager::exportFiles()
 void FileManager::printStats()
 {
     if (m_duplicateCount > 0)
-        m_ui.textEditOutput->append("Found " + QString::number(m_duplicateCount) + (m_duplicateCount > 1 ? " already existing files." : " already existing file."));
+        emit output("Found " + QString::number(m_duplicateCount) + (m_duplicateCount > 1 ? " already existing files." : " already existing file."));
 
-    m_ui.textEditOutput->append(QString::number(m_copyCount) + (m_copyCount > 1 ? " files copied." : " file copied."));
+    emit output(QString::number(m_copyCount) + (m_copyCount > 1 ? " files copied." : " file copied."));
 
     if (m_exportErrors.size() > 0) {
-        m_ui.textEditOutput->append("ERROR : " + QString::number(m_exportErrors.size()) + ((m_exportErrors.size() > 1) ? " files in export directory could not be read !" : " file in export directory could not be read !"));
+        emit output("ERROR : " + QString::number(m_exportErrors.size()) + ((m_exportErrors.size() > 1) ? " files in export directory could not be read !" : " file in export directory could not be read !"));
     }
 
     if (m_importErrors.size() > 0) {
-        m_ui.textEditOutput->append("ERROR : " + QString::number(m_importErrors.size()) + ((m_importErrors.size() > 1) ? " files in import directory could not be read !" : " file in import directory could not be read !"));
+        emit output("ERROR : " + QString::number(m_importErrors.size()) + ((m_importErrors.size() > 1) ? " files in import directory could not be read !" : " file in import directory could not be read !"));
     }
 
-    if (m_canceled) {
-        m_ui.textEditOutput->append("SYNC CANCELED !");
+    if (m_cancelled.loadRelaxed()) {
+        emit output("SYNC CANCELED !");
     }
 }
 
@@ -284,5 +285,5 @@ void FileManager::printElapsedTime(std::chrono::steady_clock::time_point start, 
     s = elapsedTime;
 
     QString timeToPrint = QString::number(h).rightJustified(2, '0') + ":" + QString::number(m).rightJustified(2, '0') + ":" + QString::number(s).rightJustified(2, '0');
-    m_ui.textEditOutput->append("Elapsed time : " + timeToPrint);
+    emit output("Elapsed time : " + timeToPrint);
 }
