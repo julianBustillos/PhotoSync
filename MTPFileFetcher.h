@@ -32,7 +32,6 @@ private:
 
 private:
     WPDManager *m_WPDManager; //TODO CHANGE ??
-    QAtomicInt m_paused;
     QAtomicInt m_stopped;
 
     mutable QMutex m_mutex;

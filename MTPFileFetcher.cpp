@@ -3,7 +3,7 @@
 
 
 MTPFileFetcher::MTPFileFetcher(QObject *parent) :
-    QThread(parent), m_paused(false), m_stopped(false)
+    QThread(parent), m_stopped(false)
 {
     m_WPDManager = new WPDManager(); //TODO: CHANGE
 }
@@ -44,7 +44,7 @@ void MTPFileFetcher::run()
 
     forever{
         QMutexLocker locker(&m_mutex);
-        while (!m_stopped.loadRelaxed() && (m_paused.loadRelaxed() || m_toFetch.isEmpty()))
+        while (!m_stopped.loadRelaxed() && m_toFetch.isEmpty())
             m_condition.wait(&m_mutex);
         if (m_stopped.loadRelaxed())
             return;
