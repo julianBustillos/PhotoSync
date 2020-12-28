@@ -22,27 +22,6 @@ bool DateParser::fromJPGBuffer(const QByteArray & buffer, Date & date)
     return dateFound;
 }
 
-bool DateParser::fromMP4FilePath(const QString & filePath, Date & date)
-{
-    bool dateFound = false;
-    AVFormatContext *fmt_ctx = NULL;
-    AVDictionaryEntry *tag = NULL;
-
-    int ret = avformat_open_input(&fmt_ctx, filePath.toLocal8Bit().data(), NULL, NULL);
-    if (ret == 0) {
-        tag = av_dict_get(fmt_ctx->metadata, "creation_time", tag, AV_DICT_IGNORE_SUFFIX);
-        if (tag) {
-            std::string value = tag->value;
-            date.m_year = std::stoi(value.substr(0, 4));
-            date.m_month = std::stoi(value.substr(5, 2));
-            dateFound = true;
-        }
-    }
-    avformat_close_input(&fmt_ctx);
-
-    return dateFound;
-}
-
 struct buffer_data {
     const uint8_t *ptr;
     size_t left_size;
