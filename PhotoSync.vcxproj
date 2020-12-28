@@ -103,6 +103,7 @@
     <ClCompile Include="AggregableProxyModel.cpp" />
     <ClCompile Include="AggregateModel.cpp" />
     <ClCompile Include="AggregateRootModel.cpp" />
+    <ClCompile Include="DateParser.cpp" />
     <ClCompile Include="FileSystemProxyModel.cpp" />
     <ClCompile Include="MTPFileFetcher.cpp" />
     <ClCompile Include="WPDManager.cpp" />
@@ -124,6 +125,7 @@
     <ClInclude Include="AggregableProxyModel.h" />
     <ClInclude Include="AggregateModel.h" />
     <QtMoc Include="AggregateRootModel.h" />
+    <ClInclude Include="DateParser.h" />
     <ClInclude Include="easyexif\exif.h" />
     <ClInclude Include="FileData.h" />
     <QtMoc Include="MTPFileFetcher.h" />
