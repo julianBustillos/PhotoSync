@@ -95,8 +95,12 @@ bool FileManager::getDate(const QFileInfo & fileInfo, Date &date)
         }
     }
     else if (fileInfo.suffix().compare("mp4", Qt::CaseInsensitive) == 0) {
-        DateParser::fromMP4FilePath(fileInfo.absoluteFilePath(), date);
-        isParsed = true;
+        QFile file(fileInfo.absoluteFilePath());
+        if (file.open(QIODevice::ReadOnly)) {
+            DateParser::fromMPRBuffer(file.readAll(), date);
+            file.close();
+            isParsed = true;
+        }
     }
 
     return isParsed;

@@ -5,6 +5,6 @@
 
 namespace DateParser
 {
-    bool fromJPGBuffer(const QByteArray &fileData, Date &date);
-    bool fromMP4FilePath(const QString &filePath, Date &date);
+    bool fromJPGBuffer(const QByteArray &buffer, Date &date);
+    bool fromMPRBuffer(const QByteArray &buffer, Date &date);
 }
