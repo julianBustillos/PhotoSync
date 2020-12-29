@@ -23,11 +23,12 @@ public:
     };
 
     struct Item {
-        Item(QString name, ItemType type, QString date);
+        Item(QString name, ItemType type, QString date, int size);
 
         QString m_name;
         ItemType m_type;
         QString m_date;
+        int m_size;
     };
 
 public:
@@ -47,6 +48,7 @@ private:
         PWSTR m_objectID = nullptr;
         ItemType m_type = UNKNOWN;
         PWSTR m_date = nullptr;
+        ULONG m_size = 0;
         std::map<QString, DeviceNode *> m_children;
         bool m_populatedChildren = false;
     };

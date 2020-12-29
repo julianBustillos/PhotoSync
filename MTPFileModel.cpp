@@ -1,5 +1,6 @@
 #include "MTPFileModel.h"
 #include <QVector>
+#include <QLocale>
 
 
 MTPFileModel::MTPFileModel(QObject * parent) :
@@ -150,7 +151,7 @@ QVariant MTPFileModel::data(const QModelIndex & index, int role) const
     case Qt::DisplayRole:
         switch (index.column()) {
         case 0: return node(index)->getName();
-        case 1: return node(index)->getSize() ? QString::number(node(index)->getSize()) : QString();
+        case 1: return FormatSize(node(index)->getSize());
         case 2: return node(index)->getType();
         case 3: return node(index)->getLastModified();
         default:
@@ -229,7 +230,7 @@ void MTPFileModel::populate(const NodeContainer &container)
 {
     if (!container.m_content->isEmpty()) {
         for (WPDManager::Item &item : *container.m_content) {
-            MTPFileNode *child = new MTPFileNode(item.m_name, TypeConversion(item.m_type), 0, FormatDate(item.m_date), m_iconProvider.icon(IconConversion(item.m_type)), container.m_node);
+            MTPFileNode *child = new MTPFileNode(item.m_name, TypeConversion(item.m_type), item.m_size, FormatDate(item.m_date), m_iconProvider.icon(IconConversion(item.m_type)), container.m_node);
             if (child) {
                 container.m_node->getChildren().insert(MTPFileNodePathKey(item.m_name), child);
                 container.m_node->getVisibleChildren().append(item.m_name);
@@ -334,4 +335,12 @@ QString MTPFileModel::FormatDate(QString date)
     }
 
     return newDate;
+}
+
+QString MTPFileModel::FormatSize(int bytes)
+{
+    if (bytes <= 0)
+        return QString();
+    
+    return QLocale::system().formattedDataSize(bytes);
 }

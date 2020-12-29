@@ -52,6 +52,7 @@ private:
     static MTPFileNode::Type TypeConversion(WPDManager::ItemType type);
     static QFileIconProvider::IconType IconConversion(WPDManager::ItemType type);
     static QString FormatDate(QString date);
+    static QString FormatSize(int bytes);
 
 private:
     MTPFileFetcher *m_fetcher;

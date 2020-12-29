@@ -56,7 +56,7 @@ bool WPDManager::getContent(QString path, QVector<Item>& content)
                 populate(*node, deviceIter->second.m_content, deviceIter->second.m_properties);
                 content.reserve(node->m_children.size());
                 for (auto &child : node->m_children)
-                    content.append(Item(child.first, child.second->m_type, QString::fromWCharArray(child.second->m_date)));
+                    content.append(Item(child.first, child.second->m_type, QString::fromWCharArray(child.second->m_date), child.second->m_size));
             }
         }
     }
@@ -101,6 +101,9 @@ void WPDManager::createPropertiesToRead()
 
     if (SUCCEEDED(m_hr_init))
         m_hr_init = m_propertiesToRead->Add(WPD_OBJECT_DATE_MODIFIED);
+
+    if (SUCCEEDED(m_hr_init))
+        m_hr_init = m_propertiesToRead->Add(WPD_OBJECT_SIZE);
 }
 
 void WPDManager::fetchDevices()
@@ -231,6 +234,9 @@ bool WPDManager::fetchData(PWSTR & name, DeviceNode & node, Microsoft::WRL::ComP
     if (SUCCEEDED(hr) && node.m_type != DRIVE)
         hr = objectProperties->GetStringValue(WPD_OBJECT_DATE_MODIFIED, &node.m_date);
 
+    if (SUCCEEDED(hr) && node.m_type == FILE)
+        hr = objectProperties->GetUnsignedIntegerValue(WPD_OBJECT_SIZE, &node.m_size);
+
     return SUCCEEDED(hr);
 }
 
@@ -269,7 +275,7 @@ WPDManager::DeviceData::~DeviceData()
     m_deviceID = nullptr;
 }
 
-WPDManager::Item::Item(QString name, ItemType type, QString date) :
-    m_name(name), m_type(type), m_date(date)
+WPDManager::Item::Item(QString name, ItemType type, QString date, int size) :
+    m_name(name), m_type(type), m_date(date), m_size(size)
 {
 }
