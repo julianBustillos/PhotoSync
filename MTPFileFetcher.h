@@ -31,7 +31,6 @@ private:
     void fetch(MTPFileNode *node);
 
 private:
-    WPDManager *m_WPDManager; //TODO CHANGE ??
     QAtomicInt m_stopped;
 
     mutable QMutex m_mutex;

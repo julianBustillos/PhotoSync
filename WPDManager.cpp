@@ -24,6 +24,12 @@ WPDManager::~WPDManager()
         CoUninitialize();
 }
 
+WPDManager & WPDManager::getInstance()
+{
+    static WPDManager instance;
+    return instance;
+}
+
 bool WPDManager::getDevices(QStringList& devices)
 {
     if (SUCCEEDED(m_hr_init)) {

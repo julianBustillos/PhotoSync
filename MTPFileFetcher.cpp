@@ -1,11 +1,11 @@
 #include "MTPFileFetcher.h"
 #include "MTPFileModel.h"
+#include "WPDManager.h"
 
 
 MTPFileFetcher::MTPFileFetcher(QObject *parent) :
     QThread(parent), m_stopped(false)
 {
-    m_WPDManager = new WPDManager(); //TODO: CHANGE
 }
 
 MTPFileFetcher::~MTPFileFetcher()
@@ -15,16 +15,12 @@ MTPFileFetcher::~MTPFileFetcher()
     m_condition.wakeAll();
     locker.unlock();
     wait();
-
-    if (m_WPDManager) //TODO: CHANGE
-        delete m_WPDManager;
-    m_WPDManager = nullptr;
 }
 
 void MTPFileFetcher::fetchDevices()
 {
     QStringList devices;
-    if (m_WPDManager && m_WPDManager->getDevices(devices))
+    if (WPDManager::getInstance().getDevices(devices))
         emit loadedDevices(devices);
 }
 
@@ -60,6 +56,6 @@ void MTPFileFetcher::run()
 void MTPFileFetcher::fetch(MTPFileNode *node)
 {
     QVector<WPDManager::Item> *content = new QVector<WPDManager::Item>();
-    if (content && m_WPDManager && m_WPDManager->getContent(node->getPath(), *content))
+    if (content && WPDManager::getInstance().getContent(node->getPath(), *content))
         emit loadedContent(NodeContainer(node, content));
 }
