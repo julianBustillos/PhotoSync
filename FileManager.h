@@ -1,11 +1,11 @@
 #pragma once
 #include <QThread>
-#include <QFileInfo>
 #include <unordered_map>
 #include <vector>
 #include <set>
 #include <chrono>
 #include "FileData.h"
+#include "ExtendedFileSystem.h"
 
 
 class FileManager : public QThread
@@ -33,7 +33,7 @@ private:
 
 private:
     bool checkDir();
-    bool getDate(const QFileInfo &fileInfo, Date &date);
+    bool getDate(const EFS::Info &fileInfo, Date &date);
     void buildExistingFileData();
     void buildImportFileData();
     void exportFiles();
@@ -42,16 +42,16 @@ private:
 
 private:
     QAtomicInt m_cancelled;
-    QString m_importPath;
-    QString m_exportPath;
+    EFS::Path m_importPath;
+    EFS::Path m_exportPath;
     const QStringList m_extensions;
     int m_runCount;
     int m_progress;
     std::unordered_map<qint64, std::vector<ExistingFile>> m_existingFiles;
     std::set<Date> m_DirectoriesToCreate;
     std::vector<ExportFile> m_filesToCopy;
-    std::set<QString> m_importErrors;
-    std::set<QString> m_exportErrors;
+    std::set<EFS::Path> m_importErrors;
+    std::set<EFS::Path> m_exportErrors;
     int m_duplicateCount;
     int m_copyCount;
 };

@@ -104,6 +104,7 @@
     <ClCompile Include="AggregateModel.cpp" />
     <ClCompile Include="AggregateRootModel.cpp" />
     <ClCompile Include="DateParser.cpp" />
+    <ClCompile Include="ExtendedFileSystem.cpp" />
     <ClCompile Include="FileSystemProxyModel.cpp" />
     <ClCompile Include="MTPFileFetcher.cpp" />
     <ClCompile Include="WPDManager.cpp" />
@@ -127,6 +128,7 @@
     <QtMoc Include="AggregateRootModel.h" />
     <ClInclude Include="DateParser.h" />
     <ClInclude Include="easyexif\exif.h" />
+    <ClInclude Include="ExtendedFileSystem.h" />
     <ClInclude Include="FileData.h" />
     <QtMoc Include="MTPFileFetcher.h" />
     <QtMoc Include="MTPFileModel.h" />
