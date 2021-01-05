@@ -2,6 +2,8 @@
 #include <QMessageBox>
 
 
+WPDManager *PhotoSync::WPDInstance = nullptr;
+
 PhotoSync::PhotoSync(QWidget *parent)
     : QMainWindow(parent), m_fileManager(this)
 {
@@ -21,14 +23,25 @@ PhotoSync::PhotoSync(QWidget *parent)
     QObject::connect(&m_fileManager, &FileManager::finished, this, &PhotoSync::finish);
 
     //DEBUG
+    m_ui.importEdit->setText("Juju S8/Phone/IMPORT_PHOTOSYNC");
     //m_ui.importEdit->setText("Juju S8/Phone/Pictures");
-    m_ui.importEdit->setText("C:/Users/Julian Bustillos/Downloads/IMPORT_PHOTOSYNC");
+    //m_ui.importEdit->setText("C:/Users/Julian Bustillos/Downloads/IMPORT_PHOTOSYNC");
     m_ui.exportEdit->setText("C:/Users/Julian Bustillos/Downloads/EXPORT_PHOTOSYNC");
     //DEBUG
 }
 
 PhotoSync::~PhotoSync()
 {
+    if (WPDInstance)
+        delete WPDInstance;
+    WPDInstance = nullptr;
+}
+
+WPDManager & PhotoSync::getWPDInstance()
+{
+    if (!WPDInstance)
+        WPDInstance = new WPDManager();
+    return *WPDInstance;
 }
 
 void PhotoSync::askImportFolder()

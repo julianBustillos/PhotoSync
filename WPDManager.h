@@ -32,16 +32,12 @@ public:
     };
 
 public:
-    static WPDManager &getInstance();
+    WPDManager();
+    ~WPDManager();
 
 public:
     bool getDevices(QStringList& devices);
     bool getContent(QString path, QVector<Item>& content);
-
-private:
-    WPDManager();
-    ~WPDManager();
-    WPDManager& operator=(const WPDManager&) = delete;
 
 private:
     struct DeviceNode

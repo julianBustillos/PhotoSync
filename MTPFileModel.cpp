@@ -29,8 +29,7 @@ MTPFileModel::~MTPFileModel()
 void MTPFileModel::setRootPath(const QString & newPath)
 {
     m_rootStack.clear();
-    QString copiedPath = newPath;
-    QList<QString> splittedPath = copiedPath.replace("\\", "/").split("/");
+    QList<QString> splittedPath = QString(newPath).replace("\\", "/").split("/");
     for (auto fileName = splittedPath.rbegin(); fileName != splittedPath.rend(); fileName++)
         m_rootStack.push(*fileName);
 

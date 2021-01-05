@@ -1,15 +1,17 @@
 #pragma once
 #include <QString>
-#include <QDirIterator>
-#include <QFileInfo>
-#include <QFile>
-#include <QDir>
+
 
 
 namespace ExtendedFileSystem /*ALIAS: EFS*/
 {
     class Path
     {
+        friend class Iterator;
+        friend class Info;
+        friend class File;
+        friend class Dir;
+
     public:
         Path(const QString &path = QString());
         ~Path();
@@ -29,7 +31,7 @@ namespace ExtendedFileSystem /*ALIAS: EFS*/
         };
 
     private:
-        QString  m_path;
+        QString m_path;
         Type m_type;
     };
 
@@ -38,14 +40,15 @@ namespace ExtendedFileSystem /*ALIAS: EFS*/
     {
     public:
         Iterator(const Path &path, const QStringList &extensions);
-        Iterator();
+        ~Iterator();
 
     public:
         bool hasNext() const;
         Path next();
 
     private:
-        QDirIterator *m_iteratorImpl;
+        const Path &m_path;
+        void *m_iteratorImpl;
     };
 
 
@@ -64,7 +67,8 @@ namespace ExtendedFileSystem /*ALIAS: EFS*/
         bool exists() const;
 
     private:
-        QFileInfo *m_infoImpl;
+        const Path &m_path;
+        void *m_infoImpl;
     };
 
 
@@ -83,7 +87,8 @@ namespace ExtendedFileSystem /*ALIAS: EFS*/
         static bool copy(const Path& sourcePath, const Path &destPath);
 
     private:
-        QFile *m_fileImpl;
+        const Path &m_path;
+        void *m_fileImpl;
     };
 
 
@@ -99,7 +104,8 @@ namespace ExtendedFileSystem /*ALIAS: EFS*/
         bool mkpath(const QString &dirPath) const;
 
     private:
-        QDir *m_dirImpl;
+        const Path &m_path;
+        void *m_dirImpl;
     };
 }
 

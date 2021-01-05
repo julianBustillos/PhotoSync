@@ -8,7 +8,7 @@ WPDManager::WPDManager() :
     m_hr_COM(E_FAIL), m_hr_init(E_FAIL)
 {
     HeapSetInformation(nullptr, HeapEnableTerminationOnCorruption, nullptr, 0);
-    m_hr_COM = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED); //TODO : if thread init switch to COINIT_MULTITHREADED
+    m_hr_COM = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 
     if (SUCCEEDED(m_hr_COM))
         m_hr_init = CoCreateInstance(CLSID_PortableDeviceManager, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&m_deviceManager));
@@ -22,12 +22,6 @@ WPDManager::~WPDManager()
 {
     if (SUCCEEDED(m_hr_COM))
         CoUninitialize();
-}
-
-WPDManager & WPDManager::getInstance()
-{
-    static WPDManager instance;
-    return instance;
 }
 
 bool WPDManager::getDevices(QStringList& devices)
