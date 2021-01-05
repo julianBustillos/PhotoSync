@@ -52,8 +52,8 @@ bool ExtendedFileSystem::Path::operator<(const Path & rhs) const
 }
 
 
-/* ExtendedFileSystem::Iterator */
-ExtendedFileSystem::Iterator::Iterator(const Path & path, const QStringList & extensions) :
+/* ExtendedFileSystem::DirIterator */
+ExtendedFileSystem::DirIterator::DirIterator(const Path & path, const QStringList & extensions) :
     m_path(path), m_iteratorImpl(nullptr)
 {
     if (m_path.m_type == Path::SYSTEM) {
@@ -64,7 +64,7 @@ ExtendedFileSystem::Iterator::Iterator(const Path & path, const QStringList & ex
     }
 }
 
-ExtendedFileSystem::Iterator::~Iterator()
+ExtendedFileSystem::DirIterator::~DirIterator()
 {
     if (m_iteratorImpl)
         delete m_iteratorImpl;
@@ -72,7 +72,7 @@ ExtendedFileSystem::Iterator::~Iterator()
 
 }
 
-bool ExtendedFileSystem::Iterator::hasNext() const
+bool ExtendedFileSystem::DirIterator::hasNext() const
 {
     if (m_iteratorImpl) {
         if (m_path.m_type == Path::SYSTEM) {
@@ -85,7 +85,7 @@ bool ExtendedFileSystem::Iterator::hasNext() const
     return false;
 }
 
-ExtendedFileSystem::Path ExtendedFileSystem::Iterator::next()
+ExtendedFileSystem::Path ExtendedFileSystem::DirIterator::next()
 {
     if (m_iteratorImpl) {
         if (m_path.m_type == Path::SYSTEM) {
@@ -100,7 +100,7 @@ ExtendedFileSystem::Path ExtendedFileSystem::Iterator::next()
 
 
 /* ExtendedFileSystem::Info */
-ExtendedFileSystem::Info::Info(const Path & path) :
+ExtendedFileSystem::FileInfo::FileInfo(const Path & path) :
     m_path(path), m_infoImpl(nullptr)
 {
     if (m_path.m_type == Path::SYSTEM) {
@@ -111,14 +111,14 @@ ExtendedFileSystem::Info::Info(const Path & path) :
     }
 }
 
-ExtendedFileSystem::Info::~Info()
+ExtendedFileSystem::FileInfo::~FileInfo()
 {
     if (m_infoImpl)
         delete m_infoImpl;
     m_infoImpl = nullptr;
 }
 
-ExtendedFileSystem::Path ExtendedFileSystem::Info::path() const
+ExtendedFileSystem::Path ExtendedFileSystem::FileInfo::path() const
 {
     if (m_infoImpl) {
         if (m_path.m_type == Path::SYSTEM) {
@@ -131,7 +131,7 @@ ExtendedFileSystem::Path ExtendedFileSystem::Info::path() const
     return Path(QString());
 }
 
-QString ExtendedFileSystem::Info::fileName() const
+QString ExtendedFileSystem::FileInfo::fileName() const
 {
     if (m_infoImpl) {
         if (m_infoImpl) {
@@ -146,7 +146,7 @@ QString ExtendedFileSystem::Info::fileName() const
     return QString();
 }
 
-void ExtendedFileSystem::Info::setFile(QString name)
+void ExtendedFileSystem::FileInfo::setFile(QString name)
 {
     if (m_infoImpl) {
         if (m_path.m_type == Path::SYSTEM) {
@@ -158,7 +158,7 @@ void ExtendedFileSystem::Info::setFile(QString name)
     }
 }
 
-QString ExtendedFileSystem::Info::suffix() const
+QString ExtendedFileSystem::FileInfo::suffix() const
 {
     if (m_infoImpl) {
         if (m_path.m_type == Path::SYSTEM) {
@@ -171,7 +171,7 @@ QString ExtendedFileSystem::Info::suffix() const
     return QString();
 }
 
-int ExtendedFileSystem::Info::size() const
+int ExtendedFileSystem::FileInfo::size() const
 {
     if (m_infoImpl) {
         if (m_path.m_type == Path::SYSTEM) {
@@ -184,7 +184,7 @@ int ExtendedFileSystem::Info::size() const
     return 0;
 }
 
-bool ExtendedFileSystem::Info::exists() const
+bool ExtendedFileSystem::FileInfo::exists() const
 {
     if (m_infoImpl) {
         if (m_path.m_type == Path::SYSTEM) {

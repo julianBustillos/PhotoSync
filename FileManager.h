@@ -33,7 +33,7 @@ private:
 
 private:
     bool checkDir();
-    bool getDate(const EFS::Info &fileInfo, Date &date);
+    bool getDate(const EFS::FileInfo &fileInfo, Date &date);
     void buildExistingFileData();
     void buildImportFileData();
     void exportFiles();

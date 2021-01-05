@@ -7,8 +7,8 @@ namespace ExtendedFileSystem /*ALIAS: EFS*/
 {
     class Path
     {
-        friend class Iterator;
-        friend class Info;
+        friend class DirIterator;
+        friend class FileInfo;
         friend class File;
         friend class Dir;
 
@@ -36,11 +36,11 @@ namespace ExtendedFileSystem /*ALIAS: EFS*/
     };
 
 
-    class Iterator
+    class DirIterator
     {
     public:
-        Iterator(const Path &path, const QStringList &extensions);
-        ~Iterator();
+        DirIterator(const Path &path, const QStringList &extensions);
+        ~DirIterator();
 
     public:
         bool hasNext() const;
@@ -52,11 +52,11 @@ namespace ExtendedFileSystem /*ALIAS: EFS*/
     };
 
 
-    class Info
+    class FileInfo
     {
     public:
-        Info(const Path &path);
-        ~Info();
+        FileInfo(const Path &path);
+        ~FileInfo();
 
     public:
         Path path() const;

@@ -80,7 +80,7 @@ bool FileManager::checkDir()
     return true;
 }
 
-bool FileManager::getDate(const EFS::Info &fileInfo, Date &date)
+bool FileManager::getDate(const EFS::FileInfo &fileInfo, Date &date)
 {
     bool isParsed = false;
 
@@ -106,19 +106,19 @@ bool FileManager::getDate(const EFS::Info &fileInfo, Date &date)
 
 void FileManager::buildExistingFileData()
 {
-    EFS::Iterator it(m_exportPath, m_extensions);
+    EFS::DirIterator it(m_exportPath, m_extensions);
     while (it.hasNext()) {
         if (m_cancelled.loadRelaxed())
             return;
 
-        EFS::Info fileInfo(it.next());
+        EFS::FileInfo fileInfo(it.next());
         m_existingFiles[fileInfo.size()].emplace_back(fileInfo.path());
     }
 }
 
 void FileManager::buildImportFileData()
 {
-    EFS::Iterator it(m_importPath, m_extensions);
+    EFS::DirIterator it(m_importPath, m_extensions);
     QList<EFS::Path> importFilePaths;
 
     while (it.hasNext())
@@ -136,7 +136,7 @@ void FileManager::buildImportFileData()
 
         bool copyFile = true;
 
-        EFS::Info fileInfo(filePath);
+        EFS::FileInfo fileInfo(filePath);
         auto filesIt = m_existingFiles.find(fileInfo.size());
         if (filesIt != m_existingFiles.end()) {
             QCryptographicHash hash(QCryptographicHash::Md5);
@@ -197,9 +197,9 @@ void FileManager::exportFiles()
         if (m_cancelled.loadRelaxed())
             return;
 
-        EFS::Info importFileInfo(file.m_path);
+        EFS::FileInfo importFileInfo(file.m_path);
         QString fileName = importFileInfo.fileName();
-        EFS::Info exportFileInfo(exportPath.path(file.m_date.toQString() + "\\" + fileName));
+        EFS::FileInfo exportFileInfo(exportPath.path(file.m_date.toQString() + "\\" + fileName));
         
         int count = 0;
         bool copyResult = false;
