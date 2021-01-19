@@ -1,6 +1,8 @@
 #pragma once
 #include <QString>
 #include <QStringList>
+#include <QIODevice>
+#include <objidl.h>
 
 
 namespace MTPFileSystem /*ALIAS: MTPFS*/
@@ -21,6 +23,61 @@ namespace MTPFileSystem /*ALIAS: MTPFS*/
         const int m_rootLevel;
         const QStringList m_extensions;
         QString m_next;
+    };
+
+
+    class FileInfo
+    {
+    public:
+        FileInfo(const QString &path);
+        ~FileInfo();
+
+    public:
+        QString path() const;
+        QString fileName() const;
+        QString suffix() const;
+        void setFile(const QString &name);
+        int size() const;
+        bool exists() const;
+
+    private:
+        QString m_path;
+    };
+
+
+    class File
+    {
+    public:
+        File(const QString &path);
+        ~File();
+
+    public:
+        bool open(QIODevice::OpenMode mode);
+        qint64 write(const QByteArray &byteArray);
+        QByteArray readAll();
+        void close();
+
+    private:
+        QIODevice::OpenMode m_mode;
+        const QString m_path;
+        IStream *m_stream;
+        int m_size;
+    };
+
+
+    class Dir
+    {
+    public:
+        Dir(const QString &path);
+        ~Dir();
+
+    public:
+        QString path(const QString &concatenate) const;
+        bool exists() const;
+        bool mkpath(const QString & dirPath) const;
+
+    private:
+        const QString m_path;
     };
 }
 

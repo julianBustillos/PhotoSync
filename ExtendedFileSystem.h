@@ -1,6 +1,6 @@
 #pragma once
 #include <QString>
-
+#include <QIODevice>
 
 
 namespace ExtendedFileSystem /*ALIAS: EFS*/
@@ -61,7 +61,7 @@ namespace ExtendedFileSystem /*ALIAS: EFS*/
     public:
         Path path() const;
         QString fileName() const;
-        void setFile(QString name);
+        void setFile(const QString &name);
         QString suffix() const;
         int size() const;
         bool exists() const;
@@ -79,12 +79,10 @@ namespace ExtendedFileSystem /*ALIAS: EFS*/
         ~File();
 
     public:
-        bool open();
+        bool open(QIODevice::OpenMode mode);
+        qint64 write(const QByteArray &byteArray);
         QByteArray readAll();
         void close();
-
-    public:
-        static bool copy(const Path& sourcePath, const Path &destPath);
 
     private:
         const Path &m_path;
@@ -99,7 +97,7 @@ namespace ExtendedFileSystem /*ALIAS: EFS*/
         ~Dir();
 
     public:
-        Path path(QString concatenate) const;
+        Path path(const QString &concatenate) const;
         bool exists() const;
         bool mkpath(const QString &dirPath) const;
 

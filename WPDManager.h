@@ -23,7 +23,7 @@ public:
     };
 
     struct Item {
-        Item(QString name, ItemType type, QString date, int size);
+        Item(QString name = QString(), ItemType type = UNKNOWN, QString date = QString(), int size = 0);
 
         QString m_name;
         ItemType m_type;
@@ -37,7 +37,10 @@ public:
 
 public:
     bool getDevices(QStringList& devices);
-    bool getContent(QString path, QVector<Item>& content);
+    bool getItem(const QString &path, Item &item);
+    bool getContent(const QString &path, QVector<Item>& content);
+    bool getStream(const QString &path, IStream **stream, int &size);
+    bool createFolder(const QString &path, const QString &folder);
 
 private:
     struct DeviceNode
@@ -55,13 +58,16 @@ private:
 
     struct DeviceData
     {
-        DeviceData(PCWSTR deviceID, Microsoft::WRL::ComPtr<IPortableDevice> device, Microsoft::WRL::ComPtr<IPortableDeviceContent> content, Microsoft::WRL::ComPtr<IPortableDeviceProperties> properties, PCWSTR objectID);
+        DeviceData(PCWSTR deviceID, Microsoft::WRL::ComPtr<IPortableDevice> device, Microsoft::WRL::ComPtr<IPortableDeviceContent> content, 
+                   Microsoft::WRL::ComPtr<IPortableDeviceProperties> properties, Microsoft::WRL::ComPtr<IPortableDeviceResources> resources, 
+                   PCWSTR objectID);
         ~DeviceData();
 
         PWSTR m_deviceID = nullptr;
         Microsoft::WRL::ComPtr<IPortableDevice> m_device;
         Microsoft::WRL::ComPtr<IPortableDeviceContent> m_content;
         Microsoft::WRL::ComPtr<IPortableDeviceProperties> m_properties;
+        Microsoft::WRL::ComPtr<IPortableDeviceResources> m_resources;
         DeviceNode m_rootNode;
     };
 
@@ -71,6 +77,8 @@ private:
     void fetchDevices();
     bool populate(DeviceNode &node, Microsoft::WRL::ComPtr<IPortableDeviceContent> content, Microsoft::WRL::ComPtr<IPortableDeviceProperties> properties);
     bool fetchData(PWSTR & name, DeviceNode &node, Microsoft::WRL::ComPtr<IPortableDeviceProperties> properties);
+    DeviceData *findDevice(const QString &deviceName);
+    DeviceNode *findNode(const QString &path);
 
 private:
     HRESULT m_hr_COM;

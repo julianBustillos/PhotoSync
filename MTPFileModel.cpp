@@ -29,7 +29,7 @@ MTPFileModel::~MTPFileModel()
 void MTPFileModel::setRootPath(const QString & newPath)
 {
     m_rootStack.clear();
-    QList<QString> splittedPath = QString(newPath).replace("\\", "/").split("/");
+    QList<QString> splittedPath = QString(newPath).replace('\\', '/').split('/');
     for (auto fileName = splittedPath.rbegin(); fileName != splittedPath.rend(); fileName++)
         m_rootStack.push(*fileName);
 
@@ -320,8 +320,8 @@ QString MTPFileModel::FormatDate(QString date)
     QString newDate = QString();
 
     if (date.size() == 23) {
-        QVector<QStringRef> YMD = QStringRef(&date, 0, 10).split("/");
-        QVector<QStringRef> HM = QStringRef(&date, 11, 5).split(":");
+        QVector<QStringRef> YMD = QStringRef(&date, 0, 10).split('/');
+        QVector<QStringRef> HM = QStringRef(&date, 11, 5).split(':');
 
         if (YMD.size() == 3 && HM.size() == 2) {
             newDate += YMD[2] + "/"; //day
