@@ -39,8 +39,10 @@ public:
     bool getDevices(QStringList& devices);
     bool getItem(const QString &path, Item &item);
     bool getContent(const QString &path, QVector<Item>& content);
-    bool getStream(const QString &path, IStream **stream, int &size);
-    bool createFolder(const QString &path, const QString &folder);
+    bool readData(const QString &path, char *data);
+    bool createFolder(const QString &path, const QString &folderName);
+    bool createFile(const QString &path, const QString &fileName, const char *data, int size);
+
 
 private:
     struct DeviceNode
@@ -59,8 +61,7 @@ private:
     struct DeviceData
     {
         DeviceData(PCWSTR deviceID, Microsoft::WRL::ComPtr<IPortableDevice> device, Microsoft::WRL::ComPtr<IPortableDeviceContent> content, 
-                   Microsoft::WRL::ComPtr<IPortableDeviceProperties> properties, Microsoft::WRL::ComPtr<IPortableDeviceResources> resources, 
-                   PCWSTR objectID);
+                   Microsoft::WRL::ComPtr<IPortableDeviceProperties> properties, Microsoft::WRL::ComPtr<IPortableDeviceResources> resources);
         ~DeviceData();
 
         PWSTR m_deviceID = nullptr;
@@ -74,6 +75,7 @@ private:
 private:
     void createClientInformation();
     void createPropertiesToRead();
+    HRESULT createBasicObjectProperties(Microsoft::WRL::ComPtr<IPortableDeviceValues> &objectProperties, PWSTR &parentID, const QString &name, const GUID &type);
     void fetchDevices();
     bool populate(DeviceNode &node, Microsoft::WRL::ComPtr<IPortableDeviceContent> content, Microsoft::WRL::ComPtr<IPortableDeviceProperties> properties);
     bool fetchData(PWSTR & name, DeviceNode &node, Microsoft::WRL::ComPtr<IPortableDeviceProperties> properties);

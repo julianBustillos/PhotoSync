@@ -53,14 +53,13 @@ namespace MTPFileSystem /*ALIAS: MTPFS*/
 
     public:
         bool open(QIODevice::OpenMode mode);
-        qint64 write(const QByteArray &byteArray);
+        qint64 write(const QByteArray &fileData);
         QByteArray readAll();
         void close();
 
     private:
         QIODevice::OpenMode m_mode;
         const QString m_path;
-        IStream *m_stream;
         int m_size;
     };
 

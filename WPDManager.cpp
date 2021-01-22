@@ -1,5 +1,7 @@
 #include "WPDManager.h"
 #include <PortableDevice.h> 
+#include <ObjIdl.h>
+
 
 #define NUM_OBJECTS_TO_REQUEST 10 //TODO: CHANGE ?
 
@@ -61,26 +63,44 @@ bool WPDManager::getContent(const QString &path, QVector<Item> &content)
     return !!node;
 }
 
-bool WPDManager::getStream(const QString & path, IStream **stream, int &size)
+bool WPDManager::readData(const QString & path, char * data)
 {
     HRESULT hr = E_FAIL;
-    *stream = nullptr;
-    size = 0;
 
-    if (!path.isEmpty()) {
+    if (!path.isEmpty() && data) {
+        Microsoft::WRL::ComPtr<IStream> stream = nullptr;
+        DWORD optimalTransferSize = 0;
+        int size = 0;
+
         DeviceData *device = findDevice(path.split('/')[0]);
         DeviceNode *node = findNode(path);
-        DWORD optimalTransferSizeBytes = 0;
         if (device && node) {
-            hr = device->m_resources->GetStream(node->m_objectID, WPD_RESOURCE_DEFAULT, STGM_READ, &optimalTransferSizeBytes, stream);
+            hr = device->m_resources->GetStream(node->m_objectID, WPD_RESOURCE_DEFAULT, STGM_READ, &optimalTransferSize, &stream);
             size = node->m_size;
+        }
+
+        if (SUCCEEDED(hr) && stream &&optimalTransferSize && size) {
+            ULONG readBytes = 0;
+            int totalReadBytes = 0;
+            int remainingBytes = size;
+
+            while (hr == S_OK && remainingBytes > 0) {
+                int bytesToRead = (remainingBytes > optimalTransferSize) ? optimalTransferSize : remainingBytes;
+                hr = stream->Read(data + totalReadBytes, bytesToRead, &readBytes);
+                totalReadBytes += readBytes;
+                remainingBytes -= readBytes;
+                readBytes = 0;
+            }
+
+            if (SUCCEEDED(hr) && remainingBytes != 0)
+                hr = E_FAIL;
         }
     }
 
     return SUCCEEDED(hr);
 }
 
-bool WPDManager::createFolder(const QString & path, const QString & folder)
+bool WPDManager::createFolder(const QString & path, const QString & folderName)
 {
     HRESULT hr = E_FAIL;
 
@@ -88,26 +108,55 @@ bool WPDManager::createFolder(const QString & path, const QString & folder)
         DeviceData *device = findDevice(path.split('/')[0]);
         DeviceNode *node = findNode(path);
 
-        if (device && node) {
+        if (device && node && (node->m_type == FOLDER || node->m_type == DRIVE)) {
             Microsoft::WRL::ComPtr<IPortableDeviceValues> objectProperties = nullptr;
 
-            HRESULT hr = CoCreateInstance(CLSID_PortableDeviceValues, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&objectProperties));
-            if (SUCCEEDED(hr))
-                hr = objectProperties->SetStringValue(WPD_OBJECT_PARENT_ID, node->m_objectID);
+            hr = createBasicObjectProperties(objectProperties, node->m_objectID, folderName, WPD_CONTENT_TYPE_FOLDER);
 
             if (SUCCEEDED(hr))
-                hr = objectProperties->SetStringValue(WPD_OBJECT_NAME, folder.toStdWString().c_str());
+                hr = device->m_content->CreateObjectWithPropertiesOnly(objectProperties.Get(), nullptr);
+        }
+    }
+
+    return SUCCEEDED(hr);
+}
+
+bool WPDManager::createFile(const QString & path, const QString & fileName, const char * data, int size)
+{
+    HRESULT hr = E_FAIL;
+
+    if (!path.isEmpty() && !fileName.isEmpty() && data && size) {
+        Microsoft::WRL::ComPtr<IStream> stream = nullptr;
+        DWORD optimalTransferSize = 0;
+
+        DeviceData *device = findDevice(path.split('/')[0]);
+        DeviceNode *node = findNode(path);
+        if (device && node && (node->m_type == FOLDER || node->m_type == DRIVE)) {
+            Microsoft::WRL::ComPtr<IPortableDeviceValues> objectProperties = nullptr;
+
+            hr = createBasicObjectProperties(objectProperties, node->m_objectID, fileName, WPD_CONTENT_TYPE_UNSPECIFIED);
+            if (SUCCEEDED(hr))
+               hr = objectProperties->SetUnsignedLargeIntegerValue(WPD_OBJECT_SIZE, size);
 
             if (SUCCEEDED(hr))
-                hr = objectProperties->SetGuidValue(WPD_OBJECT_CONTENT_TYPE, WPD_CONTENT_TYPE_FOLDER);
+                hr = device->m_content->CreateObjectWithPropertiesAndData(objectProperties.Get(), &stream, &optimalTransferSize, nullptr);
+        }
 
-            if (SUCCEEDED(hr))
-            {
-                PWSTR newlyCreatedObject = nullptr;
-                hr = device->m_content->CreateObjectWithPropertiesOnly(objectProperties.Get(), &newlyCreatedObject);
-                CoTaskMemFree(newlyCreatedObject);
-                newlyCreatedObject = nullptr;
+        if (SUCCEEDED(hr) && stream && optimalTransferSize) {
+            ULONG writtenBytes = 0;
+            int totalWrittenBytes = 0;
+            int remainingBytes = size;
+
+            while (hr == S_OK && remainingBytes > 0) {
+                ULONG bytesToWrite = (remainingBytes > optimalTransferSize) ? optimalTransferSize : remainingBytes;
+                hr = stream->Write(data + totalWrittenBytes, bytesToWrite, &writtenBytes);
+                totalWrittenBytes += writtenBytes;
+                remainingBytes -= writtenBytes;
+                writtenBytes = 0;
             }
+
+            if (SUCCEEDED(hr))
+                hr = (remainingBytes == 0) ? stream->Commit(STGC_DEFAULT) : E_FAIL;
         }
     }
 
@@ -133,6 +182,9 @@ void WPDManager::createClientInformation()
         
     if (SUCCEEDED(m_hr_init))
         m_hr_init = m_clientInformation->SetUnsignedIntegerValue(WPD_CLIENT_SECURITY_QUALITY_OF_SERVICE, SECURITY_IMPERSONATION);
+
+    if (SUCCEEDED(m_hr_init))
+        m_hr_init = m_clientInformation->SetUnsignedIntegerValue(WPD_CLIENT_DESIRED_ACCESS, GENERIC_READ | GENERIC_WRITE);
 }
 
 void WPDManager::createPropertiesToRead()
@@ -154,6 +206,24 @@ void WPDManager::createPropertiesToRead()
 
     if (SUCCEEDED(m_hr_init))
         m_hr_init = m_propertiesToRead->Add(WPD_OBJECT_SIZE);
+}
+
+HRESULT WPDManager::createBasicObjectProperties(Microsoft::WRL::ComPtr<IPortableDeviceValues>& objectProperties, PWSTR & parentID, const QString & name, const GUID & type)
+{
+    HRESULT hr = CoCreateInstance(CLSID_PortableDeviceValues, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&objectProperties));
+    if (SUCCEEDED(hr))
+        hr = objectProperties->SetStringValue(WPD_OBJECT_PARENT_ID, parentID);
+
+    if (SUCCEEDED(hr))
+        hr = objectProperties->SetStringValue(WPD_OBJECT_NAME, name.toStdWString().c_str());
+
+    if (SUCCEEDED(hr))
+        hr = objectProperties->SetStringValue(WPD_OBJECT_ORIGINAL_FILE_NAME, name.toStdWString().c_str());
+
+    if (SUCCEEDED(hr))
+        hr = objectProperties->SetGuidValue(WPD_OBJECT_CONTENT_TYPE, type);
+
+    return hr;
 }
 
 void WPDManager::fetchDevices()
@@ -205,7 +275,7 @@ void WPDManager::fetchDevices()
                             hr = content->Transfer(&resources);
 
                         if (SUCCEEDED(hr))
-                            m_deviceMap.try_emplace(friendlyName, pnpDeviceIDs[index], device, content, properties, resources, WPD_DEVICE_OBJECT_ID);
+                            m_deviceMap.try_emplace(friendlyName, pnpDeviceIDs[index], device, content, properties, resources);
                     }
                 }
 
@@ -349,9 +419,8 @@ WPDManager::DeviceNode::~DeviceNode()
 }
 
 WPDManager::DeviceData::DeviceData(PCWSTR deviceID, Microsoft::WRL::ComPtr<IPortableDevice> device, Microsoft::WRL::ComPtr<IPortableDeviceContent> content, 
-                                   Microsoft::WRL::ComPtr<IPortableDeviceProperties> properties, Microsoft::WRL::ComPtr<IPortableDeviceResources> resources, 
-                                   PCWSTR objectID) :
-    m_device(device), m_content(content), m_properties(properties), m_resources(resources), m_rootNode(objectID)
+                                   Microsoft::WRL::ComPtr<IPortableDeviceProperties> properties, Microsoft::WRL::ComPtr<IPortableDeviceResources> resources) 
+    : m_device(device), m_content(content), m_properties(properties), m_resources(resources), m_rootNode(WPD_DEVICE_OBJECT_ID)
 {
     size_t size = wcslen(deviceID);
     m_deviceID = new wchar_t[size + 1];

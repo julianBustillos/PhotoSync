@@ -132,7 +132,7 @@ bool MTPFileSystem::FileInfo::exists() const
 
 /* MTPFileSystem::File */
 MTPFileSystem::File::File(const QString & path) :
-    m_mode(QIODevice::NotOpen), m_path(path), m_stream(nullptr), m_size(0)
+    m_mode(QIODevice::NotOpen), m_path(path), m_size(0)
 {
 }
 
@@ -144,43 +144,45 @@ MTPFileSystem::File::~File()
 bool MTPFileSystem::File::open(QIODevice::OpenMode mode)
 {
     m_mode = mode;
+    m_size = 0;
+    WPDManager::Item item;
+
     switch (m_mode) {
     case QIODevice::ReadOnly:
-        return PhotoSync::getWPDInstance().getStream(m_path, &m_stream, m_size);
+        return PhotoSync::getWPDInstance().getItem(m_path, item) && (item.m_type == WPDManager::FILE) && (m_size = item.m_size);
     case QIODevice::WriteOnly:
-        //TODO
-        break;
+        int index = m_path.lastIndexOf("/");
+        if (index > 0)
+            return PhotoSync::getWPDInstance().getItem(m_path.left(index), item) && (item.m_type != WPDManager::FILE) &&!PhotoSync::getWPDInstance().getItem(m_path, item);
     }
 
     m_mode = QIODevice::NotOpen;
     return false;
 }
 
-qint64 MTPFileSystem::File::write(const QByteArray & byteArray)
+qint64 MTPFileSystem::File::write(const QByteArray & fileData)
 {
     if (m_mode == QIODevice::WriteOnly) {
-        //TODO
+        int index = m_path.lastIndexOf("/");
+        if (PhotoSync::getWPDInstance().createFile(m_path.left(index), m_path.right(m_path.size() - index - 1), fileData.data(), fileData.size()))
+            return fileData.size();
     }
-    return qint64();
+    return -1;
 }
 
 QByteArray MTPFileSystem::File::readAll()
 {
-    if (m_mode == QIODevice::ReadOnly && m_stream && m_size > 0) {
-        ULONG readBytes = 0;
-        QByteArray byteArray(m_size, '0');
-        if ((m_stream->Read(byteArray.data(), m_size, &readBytes) == S_OK) && (readBytes == m_size))
-            return byteArray;
+    if (m_mode == QIODevice::ReadOnly && m_size > 0) {
+        QByteArray fileData(m_size, '0');
+        if (PhotoSync::getWPDInstance().readData(m_path, fileData.data()))
+            return fileData;
     }
     return QByteArray();
 }
 
 void MTPFileSystem::File::close()
 {
-    if (m_stream)
-        m_stream->Release();
-    m_stream = nullptr;
-
+    m_mode = QIODevice::NotOpen;
     m_size = 0;
 }
 
@@ -213,8 +215,10 @@ bool MTPFileSystem::Dir::mkpath(const QString & dirPath) const
     int index = 0;
     QString existingPath = m_path;
     while (index < folders.size() && created) {
-        created = PhotoSync::getWPDInstance().createFolder(existingPath, folders[index]);
-        existingPath += "/" + folders[index];
+        QString pathToCreate = existingPath + "/" + folders[index];
+        if (!PhotoSync::getWPDInstance().getItem(pathToCreate, WPDManager::Item()))
+            created = PhotoSync::getWPDInstance().createFolder(existingPath, folders[index]);
+        existingPath = pathToCreate;
         index++;
     }
 

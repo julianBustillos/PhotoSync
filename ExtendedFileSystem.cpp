@@ -237,7 +237,7 @@ qint64 ExtendedFileSystem::File::write(const QByteArray &byteArray)
             return static_cast<QFile *>(m_fileImpl)->write(byteArray);
         }
         else if (m_path.m_type == Path::MTP) {
-            static_cast<MTPFS::File *>(m_fileImpl)->write(byteArray);
+            return static_cast<MTPFS::File *>(m_fileImpl)->write(byteArray);
         }
     }
     return -1;

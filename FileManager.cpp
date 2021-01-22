@@ -147,6 +147,7 @@ void FileManager::buildImportFileData()
             }
             hash.addData(newFile.readAll());
             QByteArray newFileChecksum = hash.result();
+            newFile.close();
 
             for (auto &fileData : filesIt->second) {
                 if (fileData.m_checksum.isEmpty()) {
@@ -169,7 +170,6 @@ void FileManager::buildImportFileData()
                     break;
                 }
             }
-            newFile.close();
         }
 
         if (copyFile) {
@@ -211,7 +211,7 @@ void FileManager::exportFiles()
             EFS::File importFile(importFileInfo.path());
             EFS::File exportFile(exportFileInfo.path());
 
-            if (importFile.open(QIODevice::ReadOnly) && exportFile.open(QIODevice::WriteOnly)) 
+            if (importFile.open(QIODevice::ReadOnly) && exportFile.open(QIODevice::WriteOnly))
                 copyResult = (exportFile.write(importFile.readAll()) > -1);
 
             importFile.close();
@@ -258,7 +258,7 @@ void FileManager::printElapsedTime(std::chrono::steady_clock::time_point start, 
 
     if (elapsedTime >= 60) {
         m = elapsedTime / 60;
-        elapsedTime -= s * 60;
+        elapsedTime -= m * 60;
     }
 
     s = elapsedTime;
