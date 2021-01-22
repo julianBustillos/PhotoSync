@@ -23,11 +23,10 @@ PhotoSync::PhotoSync(QWidget *parent)
     QObject::connect(&m_fileManager, &FileManager::finished, this, &PhotoSync::finish);
 
     //DEBUG
-    m_ui.importEdit->setText("Juju S8/Phone/IMPORT_PHOTOSYNC");
-    //m_ui.importEdit->setText("Juju S8/Phone/Pictures");
-    //m_ui.importEdit->setText("C:/Users/Julian Bustillos/Downloads/IMPORT_PHOTOSYNC");
-    //m_ui.exportEdit->setText("C:/Users/Julian Bustillos/Downloads/EXPORT_PHOTOSYNC");
-    m_ui.exportEdit->setText("Juju S8/Phone/EXPORT_PHOTOSYNC");
+    //m_ui.importEdit->setText("Juju S8/Phone/IMPORT_PHOTOSYNC");
+    m_ui.importEdit->setText("C:/Users/Julian Bustillos/Downloads/IMPORT_PHOTOSYNC");
+    //m_ui.exportEdit->setText("Juju S8/Phone/EXPORT_PHOTOSYNC");
+    m_ui.exportEdit->setText("C:/Users/Julian Bustillos/Downloads/EXPORT_PHOTOSYNC");
 
     //DEBUG
 }

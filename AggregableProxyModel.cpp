@@ -64,10 +64,20 @@ QVariant AggregableProxyModel::headerData(int section, Qt::Orientation orientati
 
 void AggregableProxyModel::connectSignals(QAbstractItemModel &model)
 {
-    QObject::connect(&model, &QAbstractItemModel::rowsAboutToBeInserted, this, &AggregableProxyModel::sourceRowsAboutToBeInserted);
-    QObject::connect(&model, &QAbstractItemModel::rowsInserted, this, &AggregableProxyModel::sourceRowsInserted);
+    QObject::connect(&model, &QAbstractItemModel::dataChanged, this, &AggregableProxyModel::sourceDataChanged);
+
     QObject::connect(&model, &QAbstractItemModel::layoutAboutToBeChanged, this, &AggregableProxyModel::sourceLayoutAboutToBeChanged);
     QObject::connect(&model, &QAbstractItemModel::layoutChanged, this, &AggregableProxyModel::sourceLayoutChanged);
+
+    QObject::connect(&model, &QAbstractItemModel::rowsAboutToBeInserted, this, &AggregableProxyModel::sourceRowsAboutToBeInserted);
+    QObject::connect(&model, &QAbstractItemModel::rowsInserted, this, &AggregableProxyModel::sourceRowsInserted);
+    QObject::connect(&model, &QAbstractItemModel::rowsAboutToBeRemoved, this, &AggregableProxyModel::sourceRowsAboutToBeRemoved);
+    QObject::connect(&model, &QAbstractItemModel::rowsRemoved, this, &AggregableProxyModel::sourceRowsRemoved);
+}
+
+void AggregableProxyModel::sourceDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles)
+{
+    emit dataChanged(mapFromSource(topLeft), mapFromSource(bottomRight), roles);
 }
 
 void AggregableProxyModel::sourceLayoutAboutToBeChanged(const QList<QPersistentModelIndex> &sourceParents, QAbstractItemModel::LayoutChangeHint hint)
@@ -124,4 +134,14 @@ void AggregableProxyModel::sourceRowsAboutToBeInserted(const QModelIndex &parent
 void AggregableProxyModel::sourceRowsInserted(const QModelIndex &parent, int start, int end)
 {
     endInsertRows();
+}
+
+void AggregableProxyModel::sourceRowsAboutToBeRemoved(const QModelIndex & parent, int start, int end)
+{
+    beginRemoveRows(mapFromSource(parent), start, end);
+}
+
+void AggregableProxyModel::sourceRowsRemoved(const QModelIndex &parent, int start, int end)
+{
+    endRemoveRows();
 }

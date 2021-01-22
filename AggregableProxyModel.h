@@ -31,11 +31,16 @@ protected:
     void connectSignals(QAbstractItemModel &model);
 
 private slots:
+    void sourceDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles);
+
     void sourceLayoutAboutToBeChanged(const QList<QPersistentModelIndex> &sourceParents, QAbstractItemModel::LayoutChangeHint hint);
     void sourceLayoutChanged(const QList<QPersistentModelIndex> &sourceParents, QAbstractItemModel::LayoutChangeHint hint);
 
-    void sourceRowsAboutToBeInserted(const QModelIndex&, int, int);
-    void sourceRowsInserted(const QModelIndex&, int, int);
+    void sourceRowsAboutToBeInserted(const QModelIndex&parent, int start, int end);
+    void sourceRowsInserted(const QModelIndex&parent, int start, int end);
+    void sourceRowsAboutToBeRemoved(const QModelIndex &parent, int start, int end);
+    void sourceRowsRemoved(const QModelIndex &parent, int start, int end);
+
 
 /*private:
     QList<QPersistentModelIndex> m_layoutChangePersistentIndexes;
