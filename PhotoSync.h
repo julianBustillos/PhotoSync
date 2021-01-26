@@ -32,9 +32,9 @@ private slots:
 
 private:
     Ui::PhotoSyncClass m_ui;
-    FileExplorerDialog m_dialog; //TODO: rename ??
-    FileManager m_fileManager;
     QString m_positiveDefaultText;
+    FileExplorerDialog *m_dialog; //TODO: rename ??
+    FileManager *m_fileManager;
 
 private:
     static WPDManager *WPDInstance;

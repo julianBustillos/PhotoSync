@@ -34,15 +34,17 @@ public:
     inline bool isDir();
     inline bool isFetching();
     inline bool isPopulated();
+    inline void setUpdate();
     inline void setFetching();
     inline void setPopulated();
     QString getPath() const;
 
 private:
     enum Step {
-        TODO = 0,
-        FETCHING = 1,
-        POPULATED = 2
+        EMPTY = 0,
+        UPDATE = 1,
+        FETCHING = 2,
+        POPULATED = 3
     };
 
 private:
@@ -116,6 +118,11 @@ inline bool MTPFileNode::isFetching()
 inline bool MTPFileNode::isPopulated()
 {
     return m_step >= POPULATED;
+}
+
+inline void MTPFileNode::setUpdate()
+{
+    m_step = UPDATE;
 }
 
 inline void MTPFileNode::setFetching()

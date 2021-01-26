@@ -1,7 +1,8 @@
 #include "WPDManager.h"
+#include "WPDEvents.h"
 #include <PortableDevice.h> 
 #include <ObjIdl.h>
-
+#include <Shlwapi.h>
 
 #define NUM_OBJECTS_TO_REQUEST 10 //TODO: CHANGE ?
 
@@ -10,10 +11,8 @@ WPDManager::WPDManager() :
     m_hr_COM(E_FAIL), m_hr_init(E_FAIL)
 {
     HeapSetInformation(nullptr, HeapEnableTerminationOnCorruption, nullptr, 0);
-    m_hr_COM = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
-
-    if (SUCCEEDED(m_hr_COM))
-        m_hr_init = CoCreateInstance(CLSID_PortableDeviceManager, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&m_deviceManager));
+    m_hr_COM = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+    m_hr_init = CoCreateInstance(CLSID_PortableDeviceManager, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&m_deviceManager));
 
     createClientInformation();
     createPropertiesToRead();
@@ -22,6 +21,11 @@ WPDManager::WPDManager() :
 
 WPDManager::~WPDManager()
 {
+    for (auto &deviceIter : m_deviceMap) {
+        unregisterForDeviceEvents(deviceIter.first);
+    }
+    m_deviceMap.clear();
+
     if (SUCCEEDED(m_hr_COM))
         CoUninitialize();
 }
@@ -31,8 +35,8 @@ bool WPDManager::getDevices(QStringList& devices)
     if (SUCCEEDED(m_hr_init)) {
         devices.reserve(m_deviceMap.size());
 
-        for (auto &device : m_deviceMap)
-            devices.append(device.first);
+        for (auto &deviceIter : m_deviceMap)
+            devices.append(deviceIter.first);
     }
 
     return SUCCEEDED(m_hr_init);
@@ -44,7 +48,7 @@ bool WPDManager::getItem(const QString &path, Item &item)
     if (node) {
         item.m_name = path.right(path.size() - path.lastIndexOf('/') - 1);
         item.m_type = node->m_type;
-        item.m_date = QString::fromWCharArray(node->m_date);
+        item.m_date = node->m_date;
         item.m_size = node->m_size;
     }
 
@@ -57,7 +61,7 @@ bool WPDManager::getContent(const QString &path, QVector<Item> &content)
     if (node) {
         content.reserve(node->m_children.size());
         for (auto &child : node->m_children)
-            content.append(Item(child.first, child.second->m_type, QString::fromWCharArray(child.second->m_date), child.second->m_size));
+            content.append(Item(child.first, child.second->m_type, child.second->m_date, child.second->m_size));
     }
 
     return !!node;
@@ -75,7 +79,7 @@ bool WPDManager::readData(const QString & path, char * data)
         DeviceData *device = findDevice(path.split('/')[0]);
         DeviceNode *node = findNode(path);
         if (device && node) {
-            hr = device->m_resources->GetStream(node->m_objectID, WPD_RESOURCE_DEFAULT, STGM_READ, &optimalTransferSize, &stream);
+            hr = device->m_resources->GetStream(node->m_objectID.toStdWString().c_str(), WPD_RESOURCE_DEFAULT, STGM_READ, &optimalTransferSize, &stream);
             size = node->m_size;
         }
 
@@ -163,6 +167,22 @@ bool WPDManager::createFile(const QString & path, const QString & fileName, cons
     return SUCCEEDED(hr);
 }
 
+bool WPDManager::registerForEvents(Observer * observer)
+{
+    auto iter = m_observers.insert(observer);
+    return iter.second;
+}
+
+bool WPDManager::unregisterForEvents(Observer * observer)
+{
+    auto iter = m_observers.find(observer);
+    if (iter != m_observers.end()) {
+        m_observers.erase(iter);
+        return true;
+    }
+    return false;
+}
+
 void WPDManager::createClientInformation()
 {
     if (SUCCEEDED(m_hr_init))
@@ -208,11 +228,11 @@ void WPDManager::createPropertiesToRead()
         m_hr_init = m_propertiesToRead->Add(WPD_OBJECT_SIZE);
 }
 
-HRESULT WPDManager::createBasicObjectProperties(Microsoft::WRL::ComPtr<IPortableDeviceValues>& objectProperties, PWSTR & parentID, const QString & name, const GUID & type)
+HRESULT WPDManager::createBasicObjectProperties(Microsoft::WRL::ComPtr<IPortableDeviceValues>& objectProperties, const QString & parentID, const QString & name, const GUID & type)
 {
     HRESULT hr = CoCreateInstance(CLSID_PortableDeviceValues, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&objectProperties));
     if (SUCCEEDED(hr))
-        hr = objectProperties->SetStringValue(WPD_OBJECT_PARENT_ID, parentID);
+        hr = objectProperties->SetStringValue(WPD_OBJECT_PARENT_ID, parentID.toStdWString().c_str());
 
     if (SUCCEEDED(hr))
         hr = objectProperties->SetStringValue(WPD_OBJECT_NAME, name.toStdWString().c_str());
@@ -222,6 +242,43 @@ HRESULT WPDManager::createBasicObjectProperties(Microsoft::WRL::ComPtr<IPortable
 
     if (SUCCEEDED(hr))
         hr = objectProperties->SetGuidValue(WPD_OBJECT_CONTENT_TYPE, type);
+
+    return hr;
+}
+
+HRESULT WPDManager::registerForDeviceEvents(const QString &deviceName)
+{
+    HRESULT hr = E_FAIL;
+    Microsoft::WRL::ComPtr<WPDDeviceEventsCallback> callback = nullptr;
+    PWSTR tempEventCookie = nullptr;
+    DeviceData *device = findDevice(deviceName);
+
+    if (device && device->m_eventCookie.isEmpty()) {
+        callback = new (std::nothrow) WPDDeviceEventsCallback(*this);
+        hr = callback ? S_OK : E_OUTOFMEMORY;
+
+        if (SUCCEEDED(hr))
+            hr = device->m_device->Advise(0, callback.Get(), nullptr, &tempEventCookie);
+
+        if (SUCCEEDED(hr))
+            device->m_eventCookie = QString::fromWCharArray(tempEventCookie);
+
+        CoTaskMemFree(tempEventCookie);
+        tempEventCookie = nullptr;
+    }
+
+    return hr;
+}
+
+HRESULT WPDManager::unregisterForDeviceEvents(const QString &deviceName)
+{
+    HRESULT hr = E_FAIL;
+    DeviceData *device = findDevice(deviceName);
+
+    if (device && !device->m_eventCookie.isEmpty()) {
+        hr = device->m_device->Unadvise(device->m_eventCookie.toStdWString().c_str());
+        device->m_eventCookie.clear();
+    }
 
     return hr;
 }
@@ -274,8 +331,21 @@ void WPDManager::fetchDevices()
                         if (SUCCEEDED(hr))
                             hr = content->Transfer(&resources);
 
+                        if (SUCCEEDED(hr)) {
+                            auto &deviceIter = m_deviceMap.try_emplace(friendlyName, friendlyName, device, content, properties, resources);
+                            auto &deviceIDIter = m_deviceIDMap.emplace(QString::fromWCharArray(pnpDeviceIDs[index]), friendlyName);
+                            bool insertOK = deviceIter.second && deviceIDIter.second;
+
+                            if (insertOK) {
+                                DeviceData &device = deviceIter.first->second;
+                                if (device.m_rootNode)
+                                    device.m_objectIDMap.emplace(device.m_rootNode->m_objectID, device.m_rootNode);
+                            }
+                            hr = insertOK ? hr : E_FAIL;
+                        }
+
                         if (SUCCEEDED(hr))
-                            m_deviceMap.try_emplace(friendlyName, pnpDeviceIDs[index], device, content, properties, resources);
+                            hr = registerForDeviceEvents(friendlyName);
                     }
                 }
 
@@ -293,13 +363,30 @@ void WPDManager::fetchDevices()
     }
 }
 
-bool WPDManager::populate(DeviceNode & node, Microsoft::WRL::ComPtr<IPortableDeviceContent> content, Microsoft::WRL::ComPtr<IPortableDeviceProperties> properties)
+WPDManager::DeviceNode *WPDManager::createNode(DeviceData & device, DeviceNode &parent, const QString & objectID)
+{
+    DeviceNode *node = new DeviceNode(&parent, objectID);
+    if (node) {
+        if (fetchData(*node, device.m_properties)) {
+            parent.m_children.emplace(node->m_name, node);
+            device.m_objectIDMap.emplace(node->m_objectID, node);
+        }
+        else {
+            delete node;
+            node = nullptr;
+        }
+    }
+
+    return node;
+}
+
+bool WPDManager::populate(DeviceData &device, DeviceNode & node)
 {
     if (node.m_populatedChildren)
         return true;
 
     Microsoft::WRL::ComPtr<IEnumPortableDeviceObjectIDs> enumObjectIDs;
-    HRESULT hr = content->EnumObjects(0, node.m_objectID, nullptr, &enumObjectIDs);
+    HRESULT hr = device.m_content->EnumObjects(0, node.m_objectID.toStdWString().c_str(), nullptr, &enumObjectIDs);
 
     while (hr == S_OK)
     {
@@ -310,12 +397,7 @@ bool WPDManager::populate(DeviceNode & node, Microsoft::WRL::ComPtr<IPortableDev
         {
             for (DWORD index = 0; (index < numFetched) && (objectIDArray[index] != nullptr); index++)
             {
-                DeviceNode *child = new DeviceNode(objectIDArray[index]);
-                if (child) {
-                    PWSTR name = nullptr;
-                    if (fetchData(name, *child, properties))
-                        node.m_children.emplace(QString::fromWCharArray(name), child);
-                }
+                createNode(device, node, QString::fromWCharArray(objectIDArray[index]));
                 CoTaskMemFree(objectIDArray[index]);
                 objectIDArray[index] = nullptr;
             }
@@ -326,10 +408,11 @@ bool WPDManager::populate(DeviceNode & node, Microsoft::WRL::ComPtr<IPortableDev
      return SUCCEEDED(hr);
 }
 
-bool WPDManager::fetchData(PWSTR & name, DeviceNode & node, Microsoft::WRL::ComPtr<IPortableDeviceProperties> properties)
+bool WPDManager::fetchData(DeviceNode & node, Microsoft::WRL::ComPtr<IPortableDeviceProperties> properties)
 {
+    PWSTR str = nullptr;
     Microsoft::WRL::ComPtr<IPortableDeviceValues> objectProperties;
-    HRESULT hr = properties->GetValues(node.m_objectID, m_propertiesToRead.Get(), &objectProperties);
+    HRESULT hr = properties->GetValues(node.m_objectID.toStdWString().c_str(), m_propertiesToRead.Get(), &objectProperties);
 
     if (SUCCEEDED(hr)) {
         GUID typeGUID = GUID_NULL;
@@ -352,11 +435,22 @@ bool WPDManager::fetchData(PWSTR & name, DeviceNode & node, Microsoft::WRL::ComP
         }
     }
 
-    if (SUCCEEDED(hr))
-        hr = objectProperties->GetStringValue(WPD_OBJECT_NAME, &name);
+    if (SUCCEEDED(hr)) {
+        hr = objectProperties->GetStringValue(WPD_OBJECT_NAME, &str);
+        if (SUCCEEDED(hr))
+            node.m_name = QString::fromStdWString(str);
+        CoTaskMemFree(str);
+        str = nullptr;
+    }
 
-    if (SUCCEEDED(hr) && node.m_type != DRIVE)
-        hr = objectProperties->GetStringValue(WPD_OBJECT_DATE_MODIFIED, &node.m_date);
+    if (SUCCEEDED(hr) && node.m_type != DRIVE) {
+
+        hr = objectProperties->GetStringValue(WPD_OBJECT_DATE_MODIFIED, &str);
+        if (SUCCEEDED(hr))
+            node.m_date = QString::fromStdWString(str);
+        CoTaskMemFree(str);
+        str = nullptr;
+    }
 
     if (SUCCEEDED(hr) && node.m_type == FILE)
         hr = objectProperties->GetUnsignedIntegerValue(WPD_OBJECT_SIZE, &node.m_size);
@@ -367,7 +461,7 @@ bool WPDManager::fetchData(PWSTR & name, DeviceNode & node, Microsoft::WRL::ComP
 WPDManager::DeviceData * WPDManager::findDevice(const QString & deviceName)
 {
     DeviceData *device = nullptr;
-    auto deviceIter = m_deviceMap.find(deviceName);
+    auto &deviceIter = m_deviceMap.find(deviceName);
     if (deviceIter != m_deviceMap.end())
         device = &deviceIter->second;
 
@@ -383,34 +477,142 @@ WPDManager::DeviceNode * WPDManager::findNode(const QString & path)
         int index = 0;
         DeviceData *device = findDevice(splittedPath[index++]);
         if (device) {
-            node = &device->m_rootNode;
+            node = device->m_rootNode;
             while (node && index < splittedPath.size()) {
-                populate(*node, device->m_content, device->m_properties);
+                populate(*device, *node);
                 auto nodeIter = node->m_children.find(splittedPath[index++]);
                 node = nodeIter != node->m_children.end() ? nodeIter->second : nullptr;
             }
 
             if (node)
-                populate(*node, device->m_content, device->m_properties);
+                populate(*device, *node);
         }
     }
 
     return node;
 }
 
-WPDManager::DeviceNode::DeviceNode(PCWSTR objectID)
+QString WPDManager::findPath(const DeviceNode & node)
 {
-    size_t size = wcslen(objectID);
-    m_objectID = new wchar_t[size + 1];
-    wcscpy(m_objectID, objectID);
+    if (node.m_parent)
+        return findPath(*node.m_parent) + "/" + node.m_name;
+    return node.m_name;
+}
+
+void WPDManager::removeDevice(const QString & deviceID)
+{
+    auto &deviceIDIter = m_deviceIDMap.find(deviceID);
+    if (deviceIDIter == m_deviceIDMap.end())
+        return;
+
+    QString deviceName = deviceIDIter->second;
+    m_deviceIDMap.erase(deviceIDIter);
+
+    auto &deviceIter = m_deviceMap.find(deviceName);
+    if (deviceIter != m_deviceMap.end()) {
+        m_deviceMap.erase(deviceIter);
+        
+        for (Observer *observer : m_observers) {
+            if (observer)
+                observer->removeDevice(deviceName);
+        }
+    }
+}
+
+void WPDManager::addObject(const QString & deviceID, const QString &parentID, const QString& objectID)
+{
+    auto &deviceIDIter = m_deviceIDMap.find(deviceID);
+    if (deviceIDIter == m_deviceIDMap.end())
+        return;
+
+    QString deviceName = deviceIDIter->second;
+    DeviceData *device = findDevice(deviceName);
+    if (device) {
+        auto &parentIter = device->m_objectIDMap.find(parentID);
+        if (parentIter != device->m_objectIDMap.end()) {
+            DeviceNode *parent = parentIter->second;
+            if (parent) {
+                DeviceNode *node = createNode(*device, *parent, objectID);
+
+                if (node) {
+                    for (Observer *observer : m_observers) {
+                        if (observer)
+                            observer->addItem(findPath(*node));
+                    }
+                }
+            }
+        }
+    }
+}
+
+void WPDManager::updateObject(const QString & deviceID, const QString& objectID)
+{
+    auto &deviceIDIter = m_deviceIDMap.find(deviceID);
+    if (deviceIDIter == m_deviceIDMap.end())
+        return;
+
+    QString deviceName = deviceIDIter->second;
+    DeviceData *device = findDevice(deviceName);
+    if (device) {
+        auto &objectIter = device->m_objectIDMap.find(objectID);
+        if (objectIter != device->m_objectIDMap.end()) {
+            DeviceNode *node = objectIter->second;
+            if (node) {
+                QString oldPath = findPath(*node);
+                DeviceNode *parent = node->m_parent;
+                if (parent)
+                    parent->m_children.erase(node->m_name);
+                fetchData(*node, device->m_properties);
+
+                if (parent)
+                parent->m_children.emplace(node->m_name, node);
+
+                for (Observer *observer : m_observers) {
+                    if (observer)
+                        observer->updateItem(oldPath);
+                }
+            }
+        }
+    }
+}
+
+void WPDManager::removeObject(const QString & deviceID, const QString& objectID)
+{
+    auto &deviceIDIter = m_deviceIDMap.find(deviceID);
+    if (deviceIDIter == m_deviceIDMap.end())
+        return;
+
+    QString deviceName = deviceIDIter->second;
+    DeviceData *device = findDevice(deviceName);
+    if (device) {
+        auto &objectIter = device->m_objectIDMap.find(objectID);
+        if (objectIter != device->m_objectIDMap.end()) {
+            DeviceNode *node = objectIter->second;
+            if (node) {
+                device->m_objectIDMap.erase(objectIter);
+                if (node->m_parent)
+                    node->m_parent->m_children.erase(node->m_name);
+
+                QString path = findPath(*node);
+                delete node;
+                node = nullptr;
+
+                for (Observer *observer : m_observers) {
+                    if (observer)
+                        observer->removeItem(path);
+                }
+            }
+        }
+    }
+}
+
+WPDManager::DeviceNode::DeviceNode(DeviceNode *parent, const QString &objectID) :
+    m_parent(parent), m_objectID(objectID)
+{
 }
 
 WPDManager::DeviceNode::~DeviceNode()
 {
-    if (m_objectID)
-        delete[] m_objectID;
-    m_objectID = nullptr;
-
     for (auto &child : m_children) {
         if (child.second)
             delete child.second;
@@ -418,20 +620,21 @@ WPDManager::DeviceNode::~DeviceNode()
     }
 }
 
-WPDManager::DeviceData::DeviceData(PCWSTR deviceID, Microsoft::WRL::ComPtr<IPortableDevice> device, Microsoft::WRL::ComPtr<IPortableDeviceContent> content, 
+WPDManager::DeviceData::DeviceData(const QString &deviceName, Microsoft::WRL::ComPtr<IPortableDevice> device, Microsoft::WRL::ComPtr<IPortableDeviceContent> content,
                                    Microsoft::WRL::ComPtr<IPortableDeviceProperties> properties, Microsoft::WRL::ComPtr<IPortableDeviceResources> resources) 
-    : m_device(device), m_content(content), m_properties(properties), m_resources(resources), m_rootNode(WPD_DEVICE_OBJECT_ID)
+    : m_device(device), m_content(content), m_properties(properties), m_resources(resources), 
+    m_rootNode(new DeviceNode(nullptr, QString::fromWCharArray(WPD_DEVICE_OBJECT_ID)))
 {
-    size_t size = wcslen(deviceID);
-    m_deviceID = new wchar_t[size + 1];
-    wcscpy(m_deviceID, deviceID);
+    if (m_rootNode)
+        m_rootNode->m_name = deviceName;
 }
 
 WPDManager::DeviceData::~DeviceData()
 {
-    if (m_deviceID)
-        delete[] m_deviceID;
-    m_deviceID = nullptr;
+    m_objectIDMap.clear();
+    if (m_rootNode)
+        delete m_rootNode;
+    m_rootNode = nullptr;
 }
 
 WPDManager::Item::Item(QString name, ItemType type, QString date, int size) :

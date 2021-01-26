@@ -10,6 +10,8 @@ FileManager::FileManager(QObject *parent) :
 
 FileManager::~FileManager()
 {
+    cancel();
+    wait();
 }
 
 void FileManager::setPaths(const QString & importPath, const QString & exportPath)

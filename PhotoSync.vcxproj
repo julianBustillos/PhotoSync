@@ -108,6 +108,7 @@
     <ClCompile Include="FileSystemProxyModel.cpp" />
     <ClCompile Include="MTPFileFetcher.cpp" />
     <ClCompile Include="MTPFileSystem.cpp" />
+    <ClCompile Include="WPDEvents.cpp" />
     <ClCompile Include="WPDManager.cpp" />
     <QtRcc Include="PhotoSync.qrc" />
     <QtUic Include="FileExplorerDialog.ui" />
@@ -138,6 +139,7 @@
     <ClInclude Include="MTPFileNodePathKey.h" />
     <ClInclude Include="MTPFileSystem.h" />
     <ClInclude Include="NodeContainer.h" />
+    <ClInclude Include="WPDEvents.h" />
     <ClInclude Include="WPDManager.h" />
     <QtMoc Include="FileExplorerDialog.h" />
     <QtMoc Include="FileManager.h" />

@@ -37,8 +37,28 @@ public slots:
     void populate(const NodeContainer &container);
 
 private:
+    class Observer : public WPDManager::Observer 
+    {
+    public:
+        Observer(MTPFileModel &model);
+        ~Observer();
+
+    public:
+        void removeDevice(const QString &device);
+        void addItem(const QString &path);
+        void updateItem(const QString &path);
+        void removeItem(const QString &path);
+
+    private:
+        MTPFileModel &m_model;
+    };
+
+private:
+    void sortChildren(MTPFileNode &node);
     QModelIndex parent(MTPFileNode &child) const;
-    MTPFileNode *node(const QModelIndex &index) const;
+    MTPFileNode *indexNode(const QModelIndex &index) const;
+    MTPFileNode *pathNode(const QString &path) const;
+    void refreshPath(const QString &path) const;
 
     //TODO: ADD THESE METHODS ?
     /*
@@ -55,6 +75,7 @@ private:
     static QString FormatSize(int bytes);
 
 private:
+    Observer *m_observer;
     MTPFileFetcher *m_fetcher;
     MTPFileNode *m_root;
     QStack<QString> m_rootStack;

@@ -4,16 +4,21 @@
 #include <PortableDeviceApi.h> 
 #include <QStringList>
 #include <QVector>
-#include <map>
+#include <unordered_map>
+#include <set>
 
 #define CLIENT_NAME         L"WPD Manager"
 #define CLIENT_MAJOR_VER    1
 #define CLIENT_MINOR_VER    0
 #define CLIENT_REVISION     0
 
+class WPDDeviceEventsCallback;
+
 
 class WPDManager
 {
+    friend WPDDeviceEventsCallback;
+
 public:
     enum ItemType {
         DRIVE,
@@ -31,6 +36,18 @@ public:
         int m_size;
     };
 
+    class Observer {
+    public:
+        Observer() {};
+        virtual ~Observer() = 0 {};
+
+    public:
+        virtual void removeDevice(const QString &device) = 0;
+        virtual void addItem(const QString &path) = 0;
+        virtual void updateItem(const QString &path) = 0;
+        virtual void removeItem(const QString &path) = 0;
+    };
+
 public:
     WPDManager();
     ~WPDManager();
@@ -42,45 +59,61 @@ public:
     bool readData(const QString &path, char *data);
     bool createFolder(const QString &path, const QString &folderName);
     bool createFile(const QString &path, const QString &fileName, const char *data, int size);
-
+    //bool deleteObject(const QString &path, const QString &objectName);
+    bool registerForEvents(Observer *observer);
+    bool unregisterForEvents(Observer *observer);
 
 private:
     struct DeviceNode
     {
-        DeviceNode(PCWSTR objectID);
+        DeviceNode(DeviceNode *parent, const QString &objectID);
         ~DeviceNode();
 
-        PWSTR m_objectID = nullptr;
+        DeviceNode *m_parent;
+        QString m_name;
+        QString m_objectID;
         ItemType m_type = UNKNOWN;
-        PWSTR m_date = nullptr;
+        QString m_date;
         ULONG m_size = 0;
-        std::map<QString, DeviceNode *> m_children;
+        std::unordered_map<QString, DeviceNode *> m_children;
         bool m_populatedChildren = false;
     };
 
     struct DeviceData
     {
-        DeviceData(PCWSTR deviceID, Microsoft::WRL::ComPtr<IPortableDevice> device, Microsoft::WRL::ComPtr<IPortableDeviceContent> content, 
+        DeviceData(const QString &deviceName, Microsoft::WRL::ComPtr<IPortableDevice> device, Microsoft::WRL::ComPtr<IPortableDeviceContent> content, 
                    Microsoft::WRL::ComPtr<IPortableDeviceProperties> properties, Microsoft::WRL::ComPtr<IPortableDeviceResources> resources);
         ~DeviceData();
 
-        PWSTR m_deviceID = nullptr;
         Microsoft::WRL::ComPtr<IPortableDevice> m_device;
         Microsoft::WRL::ComPtr<IPortableDeviceContent> m_content;
         Microsoft::WRL::ComPtr<IPortableDeviceProperties> m_properties;
         Microsoft::WRL::ComPtr<IPortableDeviceResources> m_resources;
-        DeviceNode m_rootNode;
+        std::unordered_map<QString, DeviceNode *> m_objectIDMap;
+        DeviceNode *m_rootNode;
+        QString m_eventCookie;
     };
 
 private:
     void createClientInformation();
     void createPropertiesToRead();
-    HRESULT createBasicObjectProperties(Microsoft::WRL::ComPtr<IPortableDeviceValues> &objectProperties, PWSTR &parentID, const QString &name, const GUID &type);
+    HRESULT createBasicObjectProperties(Microsoft::WRL::ComPtr<IPortableDeviceValues> &objectProperties, const QString &parentID, const QString &name, const GUID &type);
+    //TODO register/unregister for manager events ??
+    HRESULT registerForDeviceEvents(const QString &deviceName);
+    HRESULT unregisterForDeviceEvents(const QString &deviceName);
     void fetchDevices();
-    bool populate(DeviceNode &node, Microsoft::WRL::ComPtr<IPortableDeviceContent> content, Microsoft::WRL::ComPtr<IPortableDeviceProperties> properties);
-    bool fetchData(PWSTR & name, DeviceNode &node, Microsoft::WRL::ComPtr<IPortableDeviceProperties> properties);
+    DeviceNode *createNode(DeviceData &device, DeviceNode &parent, const QString &objectID);
+    bool populate(DeviceData &device, DeviceNode &node);
+    bool fetchData(DeviceNode &node, Microsoft::WRL::ComPtr<IPortableDeviceProperties> properties);
     DeviceData *findDevice(const QString &deviceName);
     DeviceNode *findNode(const QString &path);
+    QString findPath(const DeviceNode &node);
+
+private:
+    void removeDevice(const QString &deviceID);
+    void addObject(const QString &deviceID, const QString &parentID, const QString& objectID);
+    void updateObject(const QString &deviceID, const QString& objectID);
+    void removeObject(const QString &deviceID, const QString& objectID);
 
 private:
     HRESULT m_hr_COM;
@@ -88,5 +121,7 @@ private:
     Microsoft::WRL::ComPtr<IPortableDeviceManager> m_deviceManager;
     Microsoft::WRL::ComPtr<IPortableDeviceValues> m_clientInformation;
     Microsoft::WRL::ComPtr<IPortableDeviceKeyCollection>  m_propertiesToRead;
-    std::map<QString, DeviceData> m_deviceMap;
+    std::unordered_map<QString, QString> m_deviceIDMap;
+    std::unordered_map<QString, DeviceData> m_deviceMap;
+    std::set<Observer *> m_observers;
 };
