@@ -90,8 +90,7 @@ bool WPDManager::readData(const QString & path, char * data)
         DeviceData *device = findDevice(path.split('/')[0]);
         DeviceNode *node = findNode(path);
         if (device && node) {
-            if (SUCCEEDED(hr))
-                hr = device->m_resources->GetStream(node->m_objectID.toStdWString().c_str(), WPD_RESOURCE_DEFAULT, STGM_READ, &optimalTransferSize, &stream);
+            hr = device->m_resources->GetStream(node->m_objectID.toStdWString().c_str(), WPD_RESOURCE_DEFAULT, STGM_READ, &optimalTransferSize, &stream);
             size = node->m_size;
         }
 
@@ -464,17 +463,17 @@ bool WPDManager::fetchData(DeviceData &device, DeviceNode &node)
         str = nullptr;
     }
 
+    if (SUCCEEDED(hr) && node.m_type == FILE)
+        hr = objectProperties->GetUnsignedIntegerValue(WPD_OBJECT_SIZE, &node.m_size);
+
     if (SUCCEEDED(hr) && node.m_type != DRIVE) {
 
-        hr = objectProperties->GetStringValue(WPD_OBJECT_DATE_MODIFIED, &str);
-        if (SUCCEEDED(hr))
+        HRESULT hrTemp = objectProperties->GetStringValue(WPD_OBJECT_DATE_MODIFIED, &str);
+        if (SUCCEEDED(hrTemp))
             node.m_date = QString::fromStdWString(str);
         CoTaskMemFree(str);
         str = nullptr;
     }
-
-    if (SUCCEEDED(hr) && node.m_type == FILE)
-        hr = objectProperties->GetUnsignedIntegerValue(WPD_OBJECT_SIZE, &node.m_size);
 
     return SUCCEEDED(hr);
 }
