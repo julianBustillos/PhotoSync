@@ -4,6 +4,8 @@
 #include <PortableDeviceApi.h> 
 #include <QStringList>
 #include <QVector>
+#include <QMutex>
+#include <QWaitCondition>
 #include <unordered_map>
 #include <set>
 
@@ -115,6 +117,10 @@ private:
     void addObject(const QString &deviceID, const QString &parentID, const QString& objectID);
     void updateObject(const QString &deviceID, const QString& objectID);
     void removeObject(const QString &deviceID, const QString& objectID);
+
+private:
+    mutable QMutex m_mutex;
+    QWaitCondition m_condition;
 
 private:
     HRESULT m_hr_COM;

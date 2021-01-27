@@ -21,6 +21,10 @@ WPDManager::WPDManager() :
 
 WPDManager::~WPDManager()
 {
+    QMutexLocker locker(&m_mutex);
+    m_condition.wakeAll();
+    locker.unlock();
+
     m_removedDevices.clear();
 
     m_deviceIDMap.clear();
@@ -43,9 +47,10 @@ WPDManager::~WPDManager()
 
 bool WPDManager::getDevices(QStringList& devices)
 {
+    QMutexLocker locker(&m_mutex);
     if (SUCCEEDED(m_hr_init)) {
         devices.reserve(m_deviceMap.size());
-
+        
         for (auto &deviceIter : m_deviceMap)
             devices.append(deviceIter.first);
     }
@@ -55,6 +60,7 @@ bool WPDManager::getDevices(QStringList& devices)
 
 bool WPDManager::getItem(const QString &path, Item &item)
 {
+    QMutexLocker locker(&m_mutex);
     DeviceNode *node = findNode(path);
     if (node) {
         item.m_name = path.right(path.size() - path.lastIndexOf('/') - 1);
@@ -68,6 +74,7 @@ bool WPDManager::getItem(const QString &path, Item &item)
 
 bool WPDManager::getContent(const QString &path, QVector<Item> &content)
 {
+    QMutexLocker locker(&m_mutex);
     DeviceNode *node = findNode(path);
     if (node) {
         content.reserve(node->m_children.size());
@@ -87,6 +94,7 @@ bool WPDManager::readData(const QString & path, char * data)
         DWORD optimalTransferSize = 0;
         int size = 0;
 
+        QMutexLocker locker(&m_mutex);
         DeviceData *device = findDevice(path.split('/')[0]);
         DeviceNode *node = findNode(path);
         if (device && node) {
@@ -120,6 +128,7 @@ bool WPDManager::createFolder(const QString & path, const QString & folderName)
     HRESULT hr = E_FAIL;
 
     if (!path.isEmpty()) {
+        QMutexLocker locker(&m_mutex);
         DeviceData *device = findDevice(path.split('/')[0]);
         DeviceNode *node = findNode(path);
 
@@ -130,6 +139,9 @@ bool WPDManager::createFolder(const QString & path, const QString & folderName)
 
             if (SUCCEEDED(hr))
                 hr = device->m_content->CreateObjectWithPropertiesOnly(objectProperties.Get(), nullptr);
+
+            if (SUCCEEDED(hr))
+                m_condition.wait(&m_mutex);
         }
     }
 
@@ -143,7 +155,8 @@ bool WPDManager::createFile(const QString & path, const QString & fileName, cons
     if (!path.isEmpty() && !fileName.isEmpty() && data && size) {
         Microsoft::WRL::ComPtr<IStream> stream;
         DWORD optimalTransferSize = 0;
-
+        
+        QMutexLocker locker(&m_mutex);
         DeviceData *device = findDevice(path.split('/')[0]);
         DeviceNode *node = findNode(path);
         if (device && node && (node->m_type == FOLDER || node->m_type == DRIVE)) {
@@ -173,6 +186,9 @@ bool WPDManager::createFile(const QString & path, const QString & fileName, cons
 
             if (SUCCEEDED(hr))
                 hr = (remainingBytes == 0) ? stream->Commit(STGC_DEFAULT) : E_FAIL;
+
+            if (SUCCEEDED(hr))
+                m_condition.wait(&m_mutex);
         }
     }
 
@@ -181,12 +197,16 @@ bool WPDManager::createFile(const QString & path, const QString & fileName, cons
 
 bool WPDManager::registerForEvents(Observer * observer)
 {
+    QMutexLocker locker(&m_mutex);
+
     auto iter = m_observers.insert(observer);
     return iter.second;
 }
 
 bool WPDManager::unregisterForEvents(Observer * observer)
 {
+    QMutexLocker locker(&m_mutex);
+
     auto iter = m_observers.find(observer);
     if (iter != m_observers.end()) {
         m_observers.erase(iter);
@@ -468,8 +488,8 @@ bool WPDManager::fetchData(DeviceData &device, DeviceNode &node)
 
     if (SUCCEEDED(hr) && node.m_type != DRIVE) {
 
-        HRESULT hrTemp = objectProperties->GetStringValue(WPD_OBJECT_DATE_MODIFIED, &str);
-        if (SUCCEEDED(hrTemp))
+        HRESULT hrOptional = objectProperties->GetStringValue(WPD_OBJECT_DATE_MODIFIED, &str);
+        if (SUCCEEDED(hrOptional))
             node.m_date = QString::fromStdWString(str);
         CoTaskMemFree(str);
         str = nullptr;
@@ -521,6 +541,7 @@ QString WPDManager::findPath(const DeviceNode & node)
 
 void WPDManager::removeDevice(const QString & deviceID)
 {
+    QMutexLocker locker(&m_mutex);
     auto &deviceIDIter = m_deviceIDMap.find(deviceID);
     if (deviceIDIter == m_deviceIDMap.end())
         return;
@@ -547,6 +568,7 @@ void WPDManager::removeDevice(const QString & deviceID)
 
 void WPDManager::addObject(const QString & deviceID, const QString &parentID, const QString& objectID)
 {
+    QMutexLocker locker(&m_mutex);
     auto &deviceIDIter = m_deviceIDMap.find(deviceID);
     if (deviceIDIter == m_deviceIDMap.end())
         return;
@@ -559,12 +581,12 @@ void WPDManager::addObject(const QString & deviceID, const QString &parentID, co
             DeviceNode *parent = parentIter->second;
             if (parent) {
                 DeviceNode *node = createNode(*device, *parent, objectID);
-
                 if (node) {
                     for (Observer *observer : m_observers) {
                         if (observer)
                             observer->addItem(findPath(*node));
                     }
+                    m_condition.wakeAll();
                 }
             }
         }
@@ -573,6 +595,7 @@ void WPDManager::addObject(const QString & deviceID, const QString &parentID, co
 
 void WPDManager::updateObject(const QString & deviceID, const QString& objectID)
 {
+    QMutexLocker locker(&m_mutex);
     auto &deviceIDIter = m_deviceIDMap.find(deviceID);
     if (deviceIDIter == m_deviceIDMap.end())
         return;
@@ -604,6 +627,7 @@ void WPDManager::updateObject(const QString & deviceID, const QString& objectID)
 
 void WPDManager::removeObject(const QString & deviceID, const QString& objectID)
 {
+    QMutexLocker locker(&m_mutex);
     auto &deviceIDIter = m_deviceIDMap.find(deviceID);
     if (deviceIDIter == m_deviceIDMap.end())
         return;
