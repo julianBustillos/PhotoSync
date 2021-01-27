@@ -5,7 +5,8 @@
 #include <Shlwapi.h>
 #include <Propvarutil.h>
 
-#define NUM_OBJECTS_TO_REQUEST 10 //TODO: CHANGE ?
+#define WPD_NUM_OBJECTS_TO_REQUEST 10 //TODO: CHANGE ?
+#define WPD_WAIT_TIMEOUT 10000
 
 
 WPDManager::WPDManager() :
@@ -51,6 +52,7 @@ WPDManager::~WPDManager()
 bool WPDManager::getDevices(QStringList& devices)
 {
     QMutexLocker locker(&m_mutex);
+
     if (SUCCEEDED(m_hr_init)) {
         devices.reserve(m_deviceMap.size());
         
@@ -144,7 +146,7 @@ bool WPDManager::createFolder(const QString & path, const QString & folderName)
                 hr = device->m_content->CreateObjectWithPropertiesOnly(objectProperties.Get(), nullptr);
 
             if (SUCCEEDED(hr))
-                m_condition.wait(&m_mutex);
+                hr = m_condition.wait(&m_mutex, WPD_WAIT_TIMEOUT) ? S_OK : E_FAIL;
         }
     }
 
@@ -191,7 +193,7 @@ bool WPDManager::createFile(const QString & path, const QString & fileName, cons
                 hr = (remainingBytes == 0) ? stream->Commit(STGC_DEFAULT) : E_FAIL;
 
             if (SUCCEEDED(hr))
-                m_condition.wait(&m_mutex);
+                hr = m_condition.wait(&m_mutex, WPD_WAIT_TIMEOUT) ? S_OK : E_FAIL;
         }
     }
 
@@ -222,7 +224,7 @@ bool WPDManager::deleteObject(const QString & path)
         PropVariantClear(&pv);
 
         if (SUCCEEDED(hr))
-            m_condition.wait(&m_mutex);
+            hr = m_condition.wait(&m_mutex, WPD_WAIT_TIMEOUT) ? S_OK : E_FAIL;
     }
     return SUCCEEDED(hr);
 }
@@ -469,8 +471,8 @@ bool WPDManager::populate(DeviceData &device, DeviceNode &node)
     while (hr == S_OK)
     {
         DWORD numFetched = 0;
-        PWSTR objectIDArray[NUM_OBJECTS_TO_REQUEST] = { 0 };
-        hr = enumObjectIDs->Next(NUM_OBJECTS_TO_REQUEST, objectIDArray, &numFetched);
+        PWSTR objectIDArray[WPD_NUM_OBJECTS_TO_REQUEST] = { 0 };
+        hr = enumObjectIDs->Next(WPD_NUM_OBJECTS_TO_REQUEST, objectIDArray, &numFetched);
         if (SUCCEEDED(hr))
         {
             for (DWORD index = 0; (index < numFetched) && (objectIDArray[index] != nullptr); index++)
