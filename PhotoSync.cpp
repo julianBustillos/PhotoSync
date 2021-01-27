@@ -5,7 +5,7 @@
 WPDManager *PhotoSync::WPDInstance = nullptr;
 
 PhotoSync::PhotoSync(QWidget *parent)
-    : QMainWindow(parent)
+    : QMainWindow(parent), m_fileManager(nullptr), m_dialog(nullptr)
 {
     m_ui.setupUi(this);
     m_ui.progressBar->setValue(0);
@@ -19,11 +19,14 @@ PhotoSync::PhotoSync(QWidget *parent)
     QObject::connect(m_ui.exportToolButton, &QToolButton::clicked, this, &PhotoSync::askExportFolder);
     QObject::connect(m_ui.positivePushButton, &QToolButton::clicked, this, &PhotoSync::run);
     QObject::connect(m_ui.negativePushButton, &QToolButton::clicked, this, &PhotoSync::close);
-    QObject::connect(m_fileManager, &FileManager::warning, this, &PhotoSync::createWarning);
-    QObject::connect(m_fileManager, &FileManager::progressBarValue, this, &PhotoSync::setProgressBarValue);
-    QObject::connect(m_fileManager, &FileManager::progressBarMaximum, this, &PhotoSync::setProgressBarMaximum);
-    QObject::connect(m_fileManager, &FileManager::output, this, &PhotoSync::appendOutput);
-    QObject::connect(m_fileManager, &FileManager::finished, this, &PhotoSync::finish);
+
+    if (m_fileManager) {
+        QObject::connect(m_fileManager, &FileManager::warning, this, &PhotoSync::createWarning);
+        QObject::connect(m_fileManager, &FileManager::progressBarValue, this, &PhotoSync::setProgressBarValue);
+        QObject::connect(m_fileManager, &FileManager::progressBarMaximum, this, &PhotoSync::setProgressBarMaximum);
+        QObject::connect(m_fileManager, &FileManager::output, this, &PhotoSync::appendOutput);
+        QObject::connect(m_fileManager, &FileManager::finished, this, &PhotoSync::finish);
+    }
 
     //DEBUG
     m_ui.importEdit->setText("Juju S8/Phone/IMPORT_PHOTOSYNC");
@@ -84,11 +87,11 @@ void PhotoSync::askExportFolder()
 
 void PhotoSync::run()
 {
-    QObject::disconnect(m_ui.positivePushButton, nullptr, nullptr, nullptr);
-    QObject::connect(m_ui.positivePushButton, &QToolButton::clicked, m_fileManager, &FileManager::cancel);
-    m_ui.positivePushButton->setText("Cancel");
-
     if (m_fileManager) {
+        QObject::disconnect(m_ui.positivePushButton, nullptr, nullptr, nullptr);
+        QObject::connect(m_ui.positivePushButton, &QToolButton::clicked, m_fileManager, &FileManager::cancel);
+        m_ui.positivePushButton->setText("Cancel");
+
         m_fileManager->setPaths(m_ui.importEdit->text(), m_ui.exportEdit->text());
         m_fileManager->start(QThread::NormalPriority);
     }

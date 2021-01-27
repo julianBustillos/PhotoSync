@@ -16,7 +16,7 @@ public:
     ~PhotoSync();
 
 public:
-    static WPDManager &getWPDInstance();
+    static WPDManager &getWPDInstance(); //TODO: change this singleton !!!!!
 
 private :
     void askImportFolder();
