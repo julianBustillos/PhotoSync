@@ -61,7 +61,7 @@ public:
     bool readData(const QString &path, char *data);
     bool createFolder(const QString &path, const QString &folderName);
     bool createFile(const QString &path, const QString &fileName, const char *data, int size);
-    //bool deleteObject(const QString &path, const QString &objectName);
+    bool deleteObject(const QString &path);
     bool registerForEvents(Observer *observer);
     bool unregisterForEvents(Observer *observer);
 
@@ -99,6 +99,7 @@ private:
 private:
     void createClientInformation();
     void createPropertiesToRead();
+    void createObjectsToDelete();
     HRESULT createBasicObjectProperties(Microsoft::WRL::ComPtr<IPortableDeviceValues> &objectProperties, const QString &parentID, const QString &name, const GUID &type);
     HRESULT createDeviceData(const QString &deviceID);
     //TODO register/unregister for manager events ??
@@ -108,7 +109,7 @@ private:
     DeviceNode *createNode(DeviceData &device, DeviceNode &parent, const QString &objectID); //TODO const DeviceData
     bool populate(DeviceData &device, DeviceNode &node); //TODO const DeviceData
     bool fetchData(DeviceData &device, DeviceNode &node); //TODO const DeviceData
-    DeviceData *findDevice(const QString &deviceName);
+    DeviceData *findDevice(const QString &path);
     DeviceNode *findNode(const QString &path);
     QString findPath(const DeviceNode &node);
 
@@ -127,7 +128,8 @@ private:
     HRESULT m_hr_init;
     Microsoft::WRL::ComPtr<IPortableDeviceManager> m_deviceManager;
     Microsoft::WRL::ComPtr<IPortableDeviceValues> m_clientInformation;
-    Microsoft::WRL::ComPtr<IPortableDeviceKeyCollection>  m_propertiesToRead;
+    Microsoft::WRL::ComPtr<IPortableDeviceKeyCollection> m_propertiesToRead;
+    Microsoft::WRL::ComPtr<IPortableDevicePropVariantCollection> m_objectsToDelete;
     std::unordered_map<QString, QString> m_deviceIDMap;
     std::unordered_map<QString, DeviceData *> m_deviceMap;
     std::vector<Microsoft::WRL::ComPtr<IPortableDevice>> m_removedDevices; //TODO change processing

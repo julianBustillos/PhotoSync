@@ -3,6 +3,7 @@
 #include <PortableDevice.h> 
 #include <ObjIdl.h>
 #include <Shlwapi.h>
+#include <Propvarutil.h>
 
 #define NUM_OBJECTS_TO_REQUEST 10 //TODO: CHANGE ?
 
@@ -16,6 +17,7 @@ WPDManager::WPDManager() :
 
     createClientInformation();
     createPropertiesToRead();
+    createObjectsToDelete();
     fetchDevices();
 }
 
@@ -37,6 +39,7 @@ WPDManager::~WPDManager()
     }
     m_deviceMap.clear();
 
+    m_objectsToDelete.Reset();
     m_propertiesToRead.Reset();
     m_clientInformation.Reset();
     m_deviceManager.Reset();
@@ -95,7 +98,7 @@ bool WPDManager::readData(const QString & path, char * data)
         int size = 0;
 
         QMutexLocker locker(&m_mutex);
-        DeviceData *device = findDevice(path.split('/')[0]);
+        DeviceData *device = findDevice(path);
         DeviceNode *node = findNode(path);
         if (device && node) {
             hr = device->m_resources->GetStream(node->m_objectID.toStdWString().c_str(), WPD_RESOURCE_DEFAULT, STGM_READ, &optimalTransferSize, &stream);
@@ -129,7 +132,7 @@ bool WPDManager::createFolder(const QString & path, const QString & folderName)
 
     if (!path.isEmpty()) {
         QMutexLocker locker(&m_mutex);
-        DeviceData *device = findDevice(path.split('/')[0]);
+        DeviceData *device = findDevice(path);
         DeviceNode *node = findNode(path);
 
         if (device && node && (node->m_type == FOLDER || node->m_type == DRIVE)) {
@@ -157,7 +160,7 @@ bool WPDManager::createFile(const QString & path, const QString & fileName, cons
         DWORD optimalTransferSize = 0;
         
         QMutexLocker locker(&m_mutex);
-        DeviceData *device = findDevice(path.split('/')[0]);
+        DeviceData *device = findDevice(path);
         DeviceNode *node = findNode(path);
         if (device && node && (node->m_type == FOLDER || node->m_type == DRIVE)) {
             Microsoft::WRL::ComPtr<IPortableDeviceValues> objectProperties;
@@ -192,6 +195,35 @@ bool WPDManager::createFile(const QString & path, const QString & fileName, cons
         }
     }
 
+    return SUCCEEDED(hr);
+}
+
+bool WPDManager::deleteObject(const QString & path)
+{
+    HRESULT hr = E_FAIL;
+
+    QMutexLocker locker(&m_mutex);
+    DeviceData *device = findDevice(path);
+    DeviceNode *node = findNode(path);
+    if (device && node) {
+        hr = node->m_children.empty() ? S_OK : E_FAIL;
+        PROPVARIANT pv = { 0 };
+
+        if (SUCCEEDED(hr))
+            hr = InitPropVariantFromString(node->m_objectID.toStdWString().c_str(), &pv);
+        
+        if (SUCCEEDED(hr))
+            hr = m_objectsToDelete->Add(&pv);
+
+        if (SUCCEEDED(hr))
+            hr = device->m_content->Delete(PORTABLE_DEVICE_DELETE_NO_RECURSION, m_objectsToDelete.Get(), nullptr);
+
+        m_objectsToDelete->Clear();
+        PropVariantClear(&pv);
+
+        if (SUCCEEDED(hr))
+            m_condition.wait(&m_mutex);
+    }
     return SUCCEEDED(hr);
 }
 
@@ -258,6 +290,12 @@ void WPDManager::createPropertiesToRead()
 
     if (SUCCEEDED(m_hr_init))
         m_hr_init = m_propertiesToRead->Add(WPD_OBJECT_SIZE);
+}
+
+void WPDManager::createObjectsToDelete()
+{
+    if (SUCCEEDED(m_hr_init))
+        m_hr_init = CoCreateInstance(CLSID_PortableDevicePropVariantCollection, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&m_objectsToDelete));
 }
 
 HRESULT WPDManager::createBasicObjectProperties(Microsoft::WRL::ComPtr<IPortableDeviceValues>& objectProperties, const QString & parentID, const QString & name, const GUID & type)
@@ -498,10 +536,10 @@ bool WPDManager::fetchData(DeviceData &device, DeviceNode &node)
     return SUCCEEDED(hr);
 }
 
-WPDManager::DeviceData * WPDManager::findDevice(const QString & deviceName)
+WPDManager::DeviceData * WPDManager::findDevice(const QString & path)
 {
     DeviceData *device = nullptr;
-    auto &deviceIter = m_deviceMap.find(deviceName);
+    auto &deviceIter = m_deviceMap.find(path.split('/')[0]);
     if (deviceIter != m_deviceMap.end())
         device = deviceIter->second;
 
@@ -651,6 +689,7 @@ void WPDManager::removeObject(const QString & deviceID, const QString& objectID)
                     if (observer)
                         observer->removeItem(path);
                 }
+                m_condition.wakeAll();
             }
         }
     }
