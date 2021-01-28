@@ -60,14 +60,6 @@ private:
     MTPFileNode *pathNode(const QString &path) const;
     void refreshPath(const QString &path) const;
 
-    //TODO: ADD THESE METHODS ?
-    /*
-    Qt::ItemFlags flags(const QModelIndex &index) const override;
-    void sortChildren(int column, const QModelIndex &parent);
-    void _q_directoryChanged(const QString &directory, const QStringList &list);
-    void _q_fileSystemChanged(const QString &path, const QVector<QPair<QString, QFileInfo> > &);
-    */
-
 private:
     static MTPFileNode::Type TypeConversion(WPDManager::ItemType type);
     static QFileIconProvider::IconType IconConversion(WPDManager::ItemType type);
@@ -79,5 +71,5 @@ private:
     MTPFileFetcher *m_fetcher;
     MTPFileNode *m_root;
     QStack<QString> m_rootStack;
-    QFileIconProvider m_iconProvider; //TODO REMOVE ??
+    QFileIconProvider m_iconProvider;
 };

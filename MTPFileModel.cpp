@@ -169,10 +169,6 @@ QVariant MTPFileModel::data(const QModelIndex & index, int role) const
             break;
         }
         break;
-    /*case QFileSystemModel::FilePathRole:
-        return "J:";
-    case QFileSystemModel::FileNameRole:
-        return "J:";*/
     case Qt::DecorationRole:
         if (index.column() == 0)
             return node->getQIcon();
@@ -183,8 +179,6 @@ QVariant MTPFileModel::data(const QModelIndex & index, int role) const
         break;
     case Qt::ForegroundRole:
         return node->isPopulated() ? QColor(Qt::black) : QColor(Qt::gray);
-    /*case QFileSystemModel::FilePermissions:
-        return QVariant();*/
     default:
         return QVariant();
     }

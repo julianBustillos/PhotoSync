@@ -106,9 +106,9 @@ private:
     HRESULT registerForDeviceEvents(DeviceData &device);
     HRESULT unregisterForDeviceEvents(DeviceData &device);
     void fetchDevices();
-    DeviceNode *createNode(DeviceData &device, DeviceNode &parent, const QString &objectID); //TODO const DeviceData
-    bool populate(DeviceData &device, DeviceNode &node); //TODO const DeviceData
-    bool fetchData(DeviceData &device, DeviceNode &node); //TODO const DeviceData
+    DeviceNode *createNode(DeviceData &device, DeviceNode &parent, const QString &objectID);
+    bool populate(DeviceData &device, DeviceNode &node);
+    bool fetchData(const DeviceData &device, DeviceNode &node);
     DeviceData *findDevice(const QString &path);
     DeviceNode *findNode(const QString &path);
     QString findPath(const DeviceNode &node);
@@ -129,9 +129,11 @@ private:
 
 private:
     mutable QMutex m_mutex;
+    // begin protected by mutex
     QAtomicInt m_readCount;
     QWaitCondition m_readFinished;
     QWaitCondition m_writeFinished;
+    // end protected by mutex
 
 private:
     HRESULT m_hr_COM;

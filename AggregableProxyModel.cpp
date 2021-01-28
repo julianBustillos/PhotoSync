@@ -94,24 +94,10 @@ void AggregableProxyModel::sourceLayoutAboutToBeChanged(const QList<QPersistentM
     }
 
     emit layoutAboutToBeChanged(parents, hint);
-
-    /*const auto proxyPersistentIndexes = persistentIndexList();
-    for (const QModelIndex &proxyPersistentIndex : proxyPersistentIndexes) {
-        m_proxyIndexes << proxyPersistentIndex;
-        const QPersistentModelIndex srcPersistentIndex = mapToSource(proxyPersistentIndex);
-        m_layoutChangePersistentIndexes << srcPersistentIndex;
-    }*/
 }
 
 void AggregableProxyModel::sourceLayoutChanged(const QList<QPersistentModelIndex> &sourceParents, QAbstractItemModel::LayoutChangeHint hint)
 {
-    /*for (int i = 0; i < m_proxyIndexes.size(); ++i) {
-        changePersistentIndex(m_proxyIndexes.at(i), mapFromSource(m_layoutChangePersistentIndexes.at(i)));
-    }
-
-    m_layoutChangePersistentIndexes.clear();
-    m_proxyIndexes.clear();*/
-
     QList<QPersistentModelIndex> parents;
     parents.reserve(sourceParents.size());
     for (const QPersistentModelIndex &parent : sourceParents) {

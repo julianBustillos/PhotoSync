@@ -5,7 +5,7 @@
 WPDManager *PhotoSync::WPDInstance = nullptr;
 
 PhotoSync::PhotoSync(QWidget *parent)
-    : QMainWindow(parent), m_fileManager(nullptr), m_dialog(nullptr)
+    : QMainWindow(parent), m_fileManager(nullptr), m_fileDialog(nullptr)
 {
     m_ui.setupUi(this);
     m_ui.progressBar->setValue(0);
@@ -13,7 +13,7 @@ PhotoSync::PhotoSync(QWidget *parent)
     m_positiveDefaultText = m_ui.positivePushButton->text();
 
     m_fileManager = new FileManager(this);
-    m_dialog = new FileExplorerDialog(this);
+    m_fileDialog = new FileExplorerDialog(this);
 
     QObject::connect(m_ui.importToolButton, &QToolButton::clicked, this, &PhotoSync::askImportFolder);
     QObject::connect(m_ui.exportToolButton, &QToolButton::clicked, this, &PhotoSync::askExportFolder);
@@ -44,9 +44,9 @@ PhotoSync::~PhotoSync()
         delete m_fileManager;
     m_fileManager = nullptr;
 
-    if (m_dialog)
-        delete m_dialog;
-    m_dialog = nullptr;
+    if (m_fileDialog)
+        delete m_fileDialog;
+    m_fileDialog = nullptr;
 
     if (WPDInstance)
         delete WPDInstance;
@@ -62,11 +62,11 @@ WPDManager & PhotoSync::getWPDInstance()
 
 void PhotoSync::askImportFolder()
 {
-    if (m_dialog) {
-        m_dialog->setWindowTitle("Import directory path");
-        m_dialog->setDirectory(m_ui.importEdit->text());
-        m_dialog->exec();
-        QString directory = m_dialog->getDirectory();
+    if (m_fileDialog) {
+        m_fileDialog->setWindowTitle("Import directory path");
+        m_fileDialog->setDirectory(m_ui.importEdit->text());
+        m_fileDialog->exec();
+        QString directory = m_fileDialog->getDirectory();
 
         if (!directory.isEmpty())
             m_ui.importEdit->setText(directory);
@@ -75,11 +75,11 @@ void PhotoSync::askImportFolder()
 
 void PhotoSync::askExportFolder()
 {
-    if (m_dialog) {
-        m_dialog->setWindowTitle("Export directory path");
-        m_dialog->setDirectory(m_ui.exportEdit->text());
-        m_dialog->exec();
-        QString directory = m_dialog->getDirectory();
+    if (m_fileDialog) {
+        m_fileDialog->setWindowTitle("Export directory path");
+        m_fileDialog->setDirectory(m_ui.exportEdit->text());
+        m_fileDialog->exec();
+        QString directory = m_fileDialog->getDirectory();
 
         if (!directory.isEmpty())
             m_ui.exportEdit->setText(directory);

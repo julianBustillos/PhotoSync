@@ -498,7 +498,7 @@ bool WPDManager::populate(DeviceData &device, DeviceNode &node)
      return SUCCEEDED(hr);
 }
 
-bool WPDManager::fetchData(DeviceData &device, DeviceNode &node)
+bool WPDManager::fetchData(const DeviceData &device, DeviceNode &node)
 {
     PWSTR str = nullptr;
     Microsoft::WRL::ComPtr<IPortableDeviceValues> objectProperties;

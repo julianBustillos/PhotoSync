@@ -36,7 +36,7 @@ signals:
 private:
     Ui::PhotoSyncClass m_ui;
     QString m_positiveDefaultText;
-    FileExplorerDialog *m_dialog; //TODO: rename ??
+    FileExplorerDialog *m_fileDialog;
     FileManager *m_fileManager;
 
 private:

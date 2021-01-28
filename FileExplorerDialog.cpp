@@ -4,9 +4,6 @@
 #include "FileSystemProxyModel.h"
 #include <QModelIndex>
 
-//DEBUG
-#include "QIdentityProxyModelCOPY.h"
-//DEBUG
 
 FileExplorerDialog::FileExplorerDialog(QWidget *parent)
     : QDialog(parent)
@@ -18,13 +15,6 @@ FileExplorerDialog::FileExplorerDialog(QWidget *parent)
     m_aggregableModel = aggregateModel;
     m_ui.fileTreeView->setModel(m_aggregableModel);
     m_ui.fileTreeView->setColumnWidth(0, 300);
-
-    // TODO: set only directories for filesystemmodel
-    /*
-    m_fileDialog.setFileMode(QFileDialog::Directory);
-    m_fileDialog.setOption(QFileDialog::DontUseNativeDialog, true);
-    m_fileDialog.setOption(QFileDialog::ShowDirsOnly, false);
-    */
 
     QObject::connect(m_aggregableModel, &AggregableItemModel::rootPathChanged, this, &FileExplorerDialog::rootPathChanged);
     QObject::connect(m_ui.chooseButton, &QPushButton::clicked, this, &FileExplorerDialog::chooseDirectory);

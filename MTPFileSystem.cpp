@@ -121,7 +121,7 @@ int MTPFileSystem::FileInfo::size() const
 {
     WPDManager::Item item;
     PhotoSync::getWPDInstance().getItem(m_path, item);
-    return item.m_size; //TODO: check size MTP vs CLASSIC
+    return item.m_size;
 }
 
 bool MTPFileSystem::FileInfo::exists() const

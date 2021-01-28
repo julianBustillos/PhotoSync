@@ -40,9 +40,4 @@ private slots:
     void sourceRowsInserted(const QModelIndex&parent, int start, int end);
     void sourceRowsAboutToBeRemoved(const QModelIndex &parent, int start, int end);
     void sourceRowsRemoved(const QModelIndex &parent, int start, int end);
-
-
-/*private:
-    QList<QPersistentModelIndex> m_layoutChangePersistentIndexes;
-    QModelIndexList m_proxyIndexes;*/
 };
