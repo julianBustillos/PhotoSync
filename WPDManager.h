@@ -120,8 +120,18 @@ private:
     void removeObject(const QString &deviceID, const QString& objectID);
 
 private:
+    void startReading();
+    void endReading();
+    void startWriting();
+    void endWriting();
+    bool waitWriting();
+
+
+private:
     mutable QMutex m_mutex;
-    QWaitCondition m_condition;
+    QAtomicInt m_readCount;
+    QWaitCondition m_readFinished;
+    QWaitCondition m_writeFinished;
 
 private:
     HRESULT m_hr_COM;
