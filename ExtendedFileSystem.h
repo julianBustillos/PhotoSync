@@ -83,6 +83,7 @@ namespace ExtendedFileSystem /*ALIAS: EFS*/
         qint64 write(const QByteArray &byteArray);
         QByteArray readAll();
         void close();
+        bool remove();
 
     private:
         const Path &m_path;

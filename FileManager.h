@@ -1,5 +1,7 @@
 #pragma once
 #include <QThread>
+#include <QMutex>
+#include <QWaitCondition>
 #include <unordered_map>
 #include <vector>
 #include <set>
@@ -17,13 +19,14 @@ public:
     ~FileManager();
 
 public:
-    void setPaths(const QString &importPath, const QString &exportPath);
+    void setSettings(const QString &importPath, const QString &exportPath, bool removeFiles);
 
 public slots:
+    void warningAnswer(bool answer);
     void cancel();
 
 signals:
-    void warning(QString title, QString message);
+    void warning(QString title, QString message, bool emitAnswer);
     void progressBarValue(int value);
     void progressBarMaximum(int maximum);
     void output(QString output);
@@ -33,6 +36,7 @@ private:
 
 private:
     bool checkDir();
+    bool checkRemove();
     bool getDate(const EFS::FileInfo &fileInfo, Date &date);
     void buildExistingFileData();
     void buildImportFileData();
@@ -41,9 +45,14 @@ private:
     void printElapsedTime(std::chrono::steady_clock::time_point start, std::chrono::steady_clock::time_point end);
 
 private:
+    QMutex m_mutex;
+    QWaitCondition m_condition;
     QAtomicInt m_cancelled;
+
+private:
     EFS::Path m_importPath;
     EFS::Path m_exportPath;
+    bool m_removeFiles;
     const QStringList m_extensions;
     int m_runCount;
     int m_progress;
@@ -54,4 +63,5 @@ private:
     std::set<EFS::Path> m_exportErrors;
     int m_duplicateCount;
     int m_copyCount;
+    int m_removeCount;
 };

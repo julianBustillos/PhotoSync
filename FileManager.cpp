@@ -14,10 +14,18 @@ FileManager::~FileManager()
     wait();
 }
 
-void FileManager::setPaths(const QString & importPath, const QString & exportPath)
+void FileManager::setSettings(const QString & importPath, const QString & exportPath, bool removeFiles)
 {
     m_importPath = importPath;
     m_exportPath = exportPath;
+    m_removeFiles = removeFiles;
+}
+
+void FileManager::warningAnswer(bool answer)
+{
+    QMutexLocker locker(&m_mutex);
+    m_removeFiles = answer;
+    m_condition.wakeAll();
 }
 
 void FileManager::cancel()
@@ -31,7 +39,7 @@ void FileManager::run()
     emit progressBarValue(m_progress = 0);
     emit progressBarMaximum(100);
 
-    if (checkDir()) {
+    if (checkDir() && checkRemove()) {
         std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
 
         if (m_runCount++)
@@ -42,6 +50,7 @@ void FileManager::run()
         
         m_duplicateCount = 0;
         m_copyCount = 0;
+        m_removeCount = 0;
 
         buildExistingFileData();
         buildImportFileData();
@@ -62,23 +71,34 @@ void FileManager::run()
 bool FileManager::checkDir()
 {
     if (m_importPath.isEmpty()) {
-        emit warning("Path error", "Import path is empty !");
+        emit warning("Path error", "Import path is empty !", false);
         return false;
     }
     if (!EFS::Dir(m_importPath).exists()) {
-        emit warning("Path error", "Import path : \"" + m_importPath.toQString() + "\" not found !");
+        emit warning("Path error", "Import path : \"" + m_importPath.toQString() + "\" not found !", false);
         return false;
     }
 
     if (m_exportPath.isEmpty()) {
-        emit warning("Path error", "Export path is empty !");
+        emit warning("Path error", "Export path is empty !", false);
         return false;
     }
     if (!EFS::Dir(m_exportPath).exists()) {
-        emit warning("Path error", "Export path : \"" + m_exportPath.toQString() + "\" not found !");
+        emit warning("Path error", "Export path : \"" + m_exportPath.toQString() + "\" not found !", false);
         return false;
     }
 
+    return true;
+}
+
+bool FileManager::checkRemove()
+{
+    if (m_removeFiles) {
+        QMutexLocker locker(&m_mutex);
+        emit warning("Remove warning", "Files are going to be removed after copy. Proceed anyway ?", true);
+        m_condition.wait(&m_mutex);
+        return m_removeFiles;
+    }
     return true;
 }
 
@@ -121,7 +141,8 @@ void FileManager::buildExistingFileData()
 void FileManager::buildImportFileData()
 {
     EFS::DirIterator it(m_importPath, m_extensions);
-    QList<EFS::Path> importFilePaths;
+    QVector<EFS::Path> importFilePaths;
+    QVector<EFS::Path> filesToRemove;
 
     while (it.hasNext())
         importFilePaths.append(it.next());
@@ -184,6 +205,17 @@ void FileManager::buildImportFileData()
             m_DirectoriesToCreate.insert(date);
             m_filesToCopy.emplace_back(date, fileInfo.path());
         }
+        else if (m_removeFiles) {
+            filesToRemove.append(filePath);
+        }
+    }
+
+    for (EFS::Path &path : filesToRemove) {
+        EFS::File file(path);
+        if (file.remove())
+            m_removeCount++;
+        else
+            m_importErrors.insert(path);
     }
 }
 
@@ -204,9 +236,16 @@ void FileManager::exportFiles()
         EFS::FileInfo exportFileInfo(exportPath.path(file.m_date.toQString() + "/" + fileName));
         
         int count = 0;
-        bool copyResult = false;
-        while (exportFileInfo.exists() && count < 100) {
-            exportFileInfo.setFile(fileName + "_" + QString::number(++count));
+        bool copy = false;
+        bool remove = false;
+
+        if (exportFileInfo.exists()) {
+            int index = fileName.lastIndexOf(".");
+            QString name = fileName.left(index);
+            QString extension = fileName.right(fileName.size() - index);
+            while (exportFileInfo.exists() && count < 100) {
+                exportFileInfo.setFile(name + "_" + QString::number(++count) + extension);
+            }
         }
 
         if (count < 100) {
@@ -214,14 +253,22 @@ void FileManager::exportFiles()
             EFS::File exportFile(exportFileInfo.path());
 
             if (importFile.open(QIODevice::ReadOnly) && exportFile.open(QIODevice::WriteOnly))
-                copyResult = (exportFile.write(importFile.readAll()) > -1);
+                copy = (exportFile.write(importFile.readAll()) >= 0);
 
             importFile.close();
             exportFile.close();
+
+            if (copy && m_removeFiles)
+                remove = importFile.remove();
         }
-        if (copyResult)
+
+        if (copy)
             m_copyCount++;
-        else
+
+        if (remove)
+            m_removeCount++;
+
+        if (!copy || (m_removeFiles && !remove))
             m_importErrors.insert(importFileInfo.path());
         emit progressBarValue(++m_progress);
     }
@@ -234,6 +281,10 @@ void FileManager::printStats()
         emit output("Found " + QString::number(m_duplicateCount) + (m_duplicateCount > 1 ? " already existing files." : " already existing file."));
 
     emit output(QString::number(m_copyCount) + (m_copyCount > 1 ? " files copied." : " file copied."));
+
+    if (m_removeCount > 0) {
+        emit output(QString::number(m_removeCount) + (m_removeCount > 1 ? " files removed." : " file removed."));
+    }
 
     if (m_exportErrors.size() > 0) {
         emit output("ERROR : " + QString::number(m_exportErrors.size()) + ((m_exportErrors.size() > 1) ? " files in export directory could not be read !" : " file in export directory could not be read !"));

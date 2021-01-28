@@ -186,6 +186,14 @@ void MTPFileSystem::File::close()
     m_size = 0;
 }
 
+bool MTPFileSystem::File::remove()
+{
+    if (m_mode == QIODevice::NotOpen) {
+        return PhotoSync::getWPDInstance().deleteObject(m_path);
+    }
+    return false;
+}
+
 /* MTPFileSystem::Dir */
 MTPFileSystem::Dir::Dir(const QString & path) :
     m_path(path)

@@ -56,6 +56,7 @@ namespace MTPFileSystem /*ALIAS: MTPFS*/
         qint64 write(const QByteArray &fileData);
         QByteArray readAll();
         void close();
+        bool remove();
 
     private:
         QIODevice::OpenMode m_mode;

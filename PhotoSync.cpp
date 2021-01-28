@@ -26,13 +26,14 @@ PhotoSync::PhotoSync(QWidget *parent)
         QObject::connect(m_fileManager, &FileManager::progressBarMaximum, this, &PhotoSync::setProgressBarMaximum);
         QObject::connect(m_fileManager, &FileManager::output, this, &PhotoSync::appendOutput);
         QObject::connect(m_fileManager, &FileManager::finished, this, &PhotoSync::finish);
+        QObject::connect(this, &PhotoSync::warningAnswer, m_fileManager, &FileManager::warningAnswer);
     }
 
     //DEBUG
     m_ui.importEdit->setText("Juju S8/Phone/IMPORT_PHOTOSYNC");
     //m_ui.importEdit->setText("C:/Users/Julian Bustillos/Downloads/IMPORT_PHOTOSYNC");
-    m_ui.exportEdit->setText("Juju S8/Phone/EXPORT_PHOTOSYNC");
-    //m_ui.exportEdit->setText("C:/Users/Julian Bustillos/Downloads/EXPORT_PHOTOSYNC");
+    //m_ui.exportEdit->setText("Juju S8/Phone/EXPORT_PHOTOSYNC");
+    m_ui.exportEdit->setText("C:/Users/Julian Bustillos/Downloads/EXPORT_PHOTOSYNC");
 
     //DEBUG
 }
@@ -92,14 +93,16 @@ void PhotoSync::run()
         QObject::connect(m_ui.positivePushButton, &QToolButton::clicked, m_fileManager, &FileManager::cancel);
         m_ui.positivePushButton->setText("Cancel");
 
-        m_fileManager->setPaths(m_ui.importEdit->text(), m_ui.exportEdit->text());
+        m_fileManager->setSettings(m_ui.importEdit->text(), m_ui.exportEdit->text(), m_ui.removeCheckBox->isChecked());
         m_fileManager->start(QThread::NormalPriority);
     }
 }
 
-void PhotoSync::createWarning(QString title, QString message)
+void PhotoSync::createWarning(QString title, QString message, bool emitAnswer)
 {
-    QMessageBox::warning(this, title, message);
+    QMessageBox::StandardButton button = QMessageBox::warning(this, title, message, emitAnswer ? QMessageBox::Ok | QMessageBox::Cancel : QMessageBox::Ok);
+    if (emitAnswer)
+        emit warningAnswer(button == QMessageBox::Ok);
 }
 
 void PhotoSync::setProgressBarValue(int value)

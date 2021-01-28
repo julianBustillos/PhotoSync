@@ -268,6 +268,20 @@ void ExtendedFileSystem::File::close()
     }
 }
 
+bool ExtendedFileSystem::File::remove()
+{
+    if (m_fileImpl) {
+        if (m_path.m_type == Path::SYSTEM) {
+            return static_cast<QFile *>(m_fileImpl)->remove();
+        }
+        else if (m_path.m_type == Path::MTP) {
+            return static_cast<MTPFS::File *>(m_fileImpl)->remove();
+        }
+    }
+    return false;
+}
+
+
 /* ExtendedFileSystem::Dir */
 ExtendedFileSystem::Dir::Dir(const Path & path) :
     m_path(path), m_dirImpl(nullptr)

@@ -250,7 +250,7 @@ void MTPFileModel::populate(const NodeContainer &container)
     for (int i = 0; i < container.m_content->size(); i++) {
         QString &newName = (*container.m_content)[i].m_name;
         if (oldChildren.removeAll(newName) == 0)
-            newChildren.push_back(i);
+            newChildren.append(i);
     }
 
     //Remove old nodes
