@@ -18,6 +18,7 @@ protected:
     QAbstractItemModel *model() const;
     QModelIndex mapFromSource(const QModelIndex& sourceIndex) const;
     QModelIndex mapToSource(const QModelIndex& proxyIndex) const;
+    int rowFromSource(const QModelIndex& sourceIndex, int row) const;
 
 private:
     class ModelIndexHelper : public AggregableItemModel
@@ -30,7 +31,7 @@ void sourceRootPathChanged(const QModelIndex &rootPathIndex);
 
 private:
     void connectRootPathChanged(AggregableItemModel &model) const;
-    void changeSourceModelID(const QAbstractItemModel *sourceModel) const;
+    int getRowOffset(const QAbstractItemModel *model) const;
 
 private:
     QVector<AggregableItemModel *> m_sourceModels;

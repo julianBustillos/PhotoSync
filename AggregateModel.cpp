@@ -58,16 +58,14 @@ QModelIndex AggregateModel::mapFromSource(const QModelIndex & sourceIndex) const
     if (!sourceIndex.isValid())
         return QModelIndex();
 
-    int rowOffset = 0;
     for (int sourceID = 1; sourceID < m_sourceModels.size(); sourceID++) {
         if (sourceIndex.model() == m_sourceModels[sourceID]) {
             *m_sourceModelID = sourceID;
             break;
         }
-        if (!sourceIndex.parent().isValid())
-            rowOffset += m_sourceModels[sourceID]->rowCount(QModelIndex());
     }
 
+    int rowOffset = sourceIndex.parent().isValid() ? 0 : getRowOffset(sourceIndex.model());
     m_mapDataToModelID->insert(sourceIndex.internalPointer(), *m_sourceModelID);
 
     return createIndex(sourceIndex.row() + rowOffset, sourceIndex.column(), sourceIndex.internalPointer());
@@ -89,6 +87,11 @@ QModelIndex AggregateModel::mapToSource(const QModelIndex & proxyIndex) const
     return QModelIndex();
 }
 
+int AggregateModel::rowFromSource(const QModelIndex & sourceIndex, int row) const
+{
+    return sourceIndex.isValid() ? row : row + getRowOffset(sourceIndex.model());
+}
+
 void AggregateModel::sourceRootPathChanged(const QModelIndex &rootPathIndex)
 {
     emit rootPathChanged(mapFromSource(rootPathIndex));
@@ -99,13 +102,14 @@ void AggregateModel::connectRootPathChanged(AggregableItemModel &model) const
     QObject::connect(&model, &AggregableItemModel::rootPathChanged, this, &AggregateModel::sourceRootPathChanged);
 }
 
-void AggregateModel::changeSourceModelID(const QAbstractItemModel * sourceModel) const
+int AggregateModel::getRowOffset(const QAbstractItemModel * model) const
 {
-    for (int sourceID = 1; sourceID < m_sourceModels.size(); sourceID++) {
-        if (m_sourceModels[sourceID] == sourceModel) {
-            *m_sourceModelID = sourceID;
-            return;
-        }
+    int rowOffset = 0;
+    for (int sourceID = 1; sourceID < m_sourceModels.size() && model; sourceID++) {
+        if (model == m_sourceModels[sourceID]) 
+            break;
+        rowOffset += m_sourceModels[sourceID]->rowCount(QModelIndex());
     }
-    *m_sourceModelID = 0;
+
+    return rowOffset;
 }

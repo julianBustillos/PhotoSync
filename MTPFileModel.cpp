@@ -223,6 +223,7 @@ void MTPFileModel::updateDevices(const QStringList &devices)
 {
     cleanNodes();
 
+    QModelIndex index = createIndex(-1, -1, nullptr);
     QStringList oldDevices;
     QVector<int> newDevices;
 
@@ -248,7 +249,7 @@ void MTPFileModel::updateDevices(const QStringList &devices)
                 idMax = idVisible;
         }
 
-        beginRemoveRows(QModelIndex(), idMin, idMax);
+        beginRemoveRows(index, idMin, idMax);
         for (const QString &oldDevice : oldDevices) {
             MTPFileNode *oldNode = m_root->getChildren().take(oldDevice);
             m_nodesToRemove.append(oldNode);
@@ -260,7 +261,7 @@ void MTPFileModel::updateDevices(const QStringList &devices)
     //Add new nodes
     if (!newDevices.isEmpty()) {
         int firstRow = m_root->getChildren().size();
-        beginInsertRows(QModelIndex(), firstRow, firstRow + newDevices.size() - 1);
+        beginInsertRows(index, firstRow, firstRow + newDevices.size() - 1);
         for (int id : newDevices) {
             const QString &newDevice = devices[id];
             MTPFileNode *child = new MTPFileNode(newDevice, MTPFileNode::DEVICE, 0, QString(), m_iconProvider.icon(QFileIconProvider::Computer), m_root);

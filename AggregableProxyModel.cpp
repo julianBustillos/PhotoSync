@@ -62,6 +62,11 @@ QVariant AggregableProxyModel::headerData(int section, Qt::Orientation orientati
     return model()->headerData(section, orientation, role);
 }
 
+int AggregableProxyModel::rowFromSource(const QModelIndex & sourceIndex, int row) const
+{
+    return row;
+}
+
 void AggregableProxyModel::connectSignals(QAbstractItemModel &model)
 {
     QObject::connect(&model, &QAbstractItemModel::dataChanged, this, &AggregableProxyModel::sourceDataChanged);
@@ -114,7 +119,7 @@ void AggregableProxyModel::sourceLayoutChanged(const QList<QPersistentModelIndex
 
 void AggregableProxyModel::sourceRowsAboutToBeInserted(const QModelIndex &parent, int start, int end)
 {
-    beginInsertRows(mapFromSource(parent), start, end);
+    beginInsertRows(mapFromSource(parent), rowFromSource(parent, start), rowFromSource(parent, end));
 }
 
 void AggregableProxyModel::sourceRowsInserted(const QModelIndex &parent, int start, int end)
@@ -124,7 +129,7 @@ void AggregableProxyModel::sourceRowsInserted(const QModelIndex &parent, int sta
 
 void AggregableProxyModel::sourceRowsAboutToBeRemoved(const QModelIndex & parent, int start, int end)
 {
-    beginRemoveRows(mapFromSource(parent), start, end);
+    beginRemoveRows(mapFromSource(parent), rowFromSource(parent, start), rowFromSource(parent, end));
 }
 
 void AggregableProxyModel::sourceRowsRemoved(const QModelIndex &parent, int start, int end)

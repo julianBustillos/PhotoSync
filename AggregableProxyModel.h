@@ -28,6 +28,7 @@ protected:
     virtual QAbstractItemModel *model() const = 0;
     virtual QModelIndex mapFromSource(const QModelIndex& sourceIndex) const = 0;
     virtual QModelIndex mapToSource(const QModelIndex& proxyIndex) const = 0;
+    virtual int rowFromSource(const QModelIndex& sourceIndex, int row) const;
     void connectSignals(QAbstractItemModel &model);
 
 private slots:
