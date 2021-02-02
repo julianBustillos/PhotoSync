@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>PhotoSync</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="PhotoSync.qrc">
+    <normaloff>:/PhotoSync/PhotoSync.png</normaloff>:/PhotoSync/PhotoSync.png</iconset>
+  </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QGridLayout" name="mainLayout">
     <item row="0" column="0">

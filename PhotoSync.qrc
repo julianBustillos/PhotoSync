@@ -1,4 +1,5 @@
 <RCC>
-    <qresource prefix="PhotoSync">
-    </qresource>
+  <qresource prefix="PhotoSync">
+    <file>PhotoSync.png</file>
+  </qresource>
 </RCC>
