@@ -636,11 +636,9 @@ QString WPDManager::findPath(const DeviceNode & node)
 
 void WPDManager::refreshDevices()
 {
-    //TODO need to wait for windows
     m_removedDevices.clear();
     m_deviceManager->RefreshDeviceList();
     fetchDevices();
-    //TODO CHECKIF IT WORKS
 }
 
 void WPDManager::removeDevice(const QString & deviceID)

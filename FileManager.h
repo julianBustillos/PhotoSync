@@ -20,6 +20,7 @@ public:
 
 public:
     void setSettings(const QString &importPath, const QString &exportPath, bool removeFiles);
+    bool getStatus() const;
 
 public slots:
     void warningAnswer(bool answer);
@@ -64,4 +65,5 @@ private:
     int m_duplicateCount;
     int m_copyCount;
     int m_removeCount;
+    int m_status;
 };

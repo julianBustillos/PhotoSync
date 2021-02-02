@@ -4,7 +4,7 @@
 
 
 FileManager::FileManager(QObject *parent) :
-    QThread(parent), m_importPath(""), m_exportPath(""), m_extensions({ "*.jpg" , "*.mp4" }), m_runCount(0), m_cancelled(false)
+    QThread(parent), m_importPath(""), m_exportPath(""), m_extensions({ "*.jpg" , "*.mp4" }), m_runCount(0), m_cancelled(false), m_status(false)
 {
 }
 
@@ -19,6 +19,11 @@ void FileManager::setSettings(const QString & importPath, const QString & export
     m_importPath = importPath;
     m_exportPath = exportPath;
     m_removeFiles = removeFiles;
+}
+
+bool FileManager::getStatus() const
+{
+    return m_status;
 }
 
 void FileManager::warningAnswer(bool answer)
@@ -39,7 +44,9 @@ void FileManager::run()
     emit progressBarValue(m_progress = 0);
     emit progressBarMaximum(100);
 
-    if (checkDir() && checkRemove()) {
+    m_status = checkDir() && checkRemove();
+
+    if (m_status) {
         std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
 
         if (m_runCount++)
@@ -66,6 +73,8 @@ void FileManager::run()
         std::chrono::steady_clock::time_point endTime = std::chrono::steady_clock::now();
         printElapsedTime(startTime, endTime);
     }
+
+    m_status &= m_cancelled.loadRelaxed();
 }
 
 bool FileManager::checkDir()
