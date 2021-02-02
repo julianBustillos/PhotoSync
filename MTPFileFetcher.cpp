@@ -5,7 +5,7 @@
 
 
 MTPFileFetcher::MTPFileFetcher(QObject *parent) :
-    QThread(parent), m_stopped(false)
+    QThread(parent), m_stopped(false), m_fetchDevices(true)
 {
 }
 
@@ -25,6 +25,13 @@ void MTPFileFetcher::fetchDevices()
         emit loadedDevices(devices);
 }
 
+void MTPFileFetcher::updateDevices()
+{
+    QMutexLocker locker(&m_mutex);
+    m_fetchDevices = true;
+    m_condition.wakeAll();
+}
+
 void MTPFileFetcher::addToFetch(MTPFileNode *node)
 {
     QMutexLocker locker(&m_mutex);
@@ -37,20 +44,23 @@ void MTPFileFetcher::addToFetch(MTPFileNode *node)
 
 void MTPFileFetcher::run() 
 {
-    fetchDevices();
-
     forever{
         QMutexLocker locker(&m_mutex);
-        while (!m_stopped.loadRelaxed() && m_toFetch.isEmpty())
+        while (!m_stopped.loadRelaxed() && !m_fetchDevices && m_toFetch.isEmpty())
             m_condition.wait(&m_mutex);
         if (m_stopped.loadRelaxed())
             return;
 
-        MTPFileNode *nodeToFetch = m_toFetch.front();
-        m_toFetch.pop_front();
-        locker.unlock();
-
-        fetch(nodeToFetch);
+        if (m_fetchDevices) {
+            m_fetchDevices = false;
+            fetchDevices();
+        }
+        else if (!m_toFetch.isEmpty()) {
+            MTPFileNode *nodeToFetch = m_toFetch.front();
+            m_toFetch.pop_front();
+            locker.unlock();
+            fetch(nodeToFetch);
+        }
     }
 }
 

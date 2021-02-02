@@ -18,7 +18,8 @@ public:
     MTPFileFetcher(QObject *parent = nullptr);
     ~MTPFileFetcher();
 
-public slots:
+public:
+    void updateDevices();
     void addToFetch(MTPFileNode *node);
 
 signals:
@@ -36,6 +37,7 @@ private:
     mutable QMutex m_mutex;
     // begin protected by mutex
     QWaitCondition m_condition;
+    bool m_fetchDevices;
     QStack<MTPFileNode *> m_toFetch;
     // end protected by mutex
 

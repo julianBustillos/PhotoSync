@@ -14,11 +14,12 @@
 #define CLIENT_MINOR_VER    0
 #define CLIENT_REVISION     0
 
+class WPDUSBDetector;
 class WPDDeviceEventsCallback;
-
 
 class WPDManager
 {
+    friend WPDUSBDetector;
     friend WPDDeviceEventsCallback;
 
 public:
@@ -44,6 +45,7 @@ public:
         virtual ~Observer() = 0 {};
 
     public:
+        virtual void addDevice(const QString &device) = 0;
         virtual void removeDevice(const QString &device) = 0;
         virtual void addItem(const QString &path) = 0;
         virtual void updateItem(const QString &path) = 0;
@@ -102,10 +104,11 @@ private:
     void createObjectsToDelete();
     HRESULT createBasicObjectProperties(Microsoft::WRL::ComPtr<IPortableDeviceValues> &objectProperties, const QString &parentID, const QString &name, const GUID &type);
     HRESULT createDeviceData(const QString &deviceID);
-    //TODO register/unregister for manager events ??
+    HRESULT fetchDevices();
+    HRESULT registerForUSBEvents();
+    HRESULT unregisterForUSBEvents();
     HRESULT registerForDeviceEvents(DeviceData &device);
     HRESULT unregisterForDeviceEvents(DeviceData &device);
-    void fetchDevices();
     DeviceNode *createNode(DeviceData &device, DeviceNode &parent, const QString &objectID);
     bool populate(DeviceData &device, DeviceNode &node);
     bool fetchData(const DeviceData &device, DeviceNode &node);
@@ -114,6 +117,7 @@ private:
     QString findPath(const DeviceNode &node);
 
 private:
+    void refreshDevices();
     void removeDevice(const QString &deviceID);
     void addObject(const QString &deviceID, const QString &parentID, const QString& objectID);
     void updateObject(const QString &deviceID, const QString& objectID);
@@ -144,6 +148,7 @@ private:
     Microsoft::WRL::ComPtr<IPortableDevicePropVariantCollection> m_objectsToDelete;
     std::unordered_map<QString, QString> m_deviceIDMap;
     std::unordered_map<QString, DeviceData *> m_deviceMap;
-    std::vector<Microsoft::WRL::ComPtr<IPortableDevice>> m_removedDevices; //TODO change processing
+    std::vector<Microsoft::WRL::ComPtr<IPortableDevice>> m_removedDevices;
+    WPDUSBDetector *m_USBDetector;
     std::set<Observer *> m_observers;
 };

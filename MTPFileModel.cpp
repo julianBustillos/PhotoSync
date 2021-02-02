@@ -14,7 +14,7 @@ MTPFileModel::MTPFileModel(QObject * parent) :
     if (m_observer)
         PhotoSync::getWPDInstance().registerForEvents(m_observer);
     if (m_fetcher) {
-        QObject::connect(m_fetcher, &MTPFileFetcher::loadedDevices, this, &MTPFileModel::addDevices);
+        QObject::connect(m_fetcher, &MTPFileFetcher::loadedDevices, this, &MTPFileModel::updateDevices);
         QObject::connect(m_fetcher, &MTPFileFetcher::loadedContent, this, &MTPFileModel::populate);
         m_fetcher->start(QThread::LowPriority);
     }
@@ -22,6 +22,8 @@ MTPFileModel::MTPFileModel(QObject * parent) :
 
 MTPFileModel::~MTPFileModel()
 {
+    cleanNodes();
+
     if (m_observer) {
         PhotoSync::getWPDInstance().unregisterForEvents(m_observer);
         delete m_observer;
@@ -217,24 +219,70 @@ QVariant MTPFileModel::headerData(int section, Qt::Orientation orientation, int 
     return returnValue;
 }
 
-void MTPFileModel::addDevices(const QStringList &devices)
+void MTPFileModel::updateDevices(const QStringList &devices)
 {
-    for (const QString &device : devices) {
-        MTPFileNode *node = new MTPFileNode(device, MTPFileNode::DEVICE, 0, QString(), m_iconProvider.icon(QFileIconProvider::Computer), m_root);
+    cleanNodes();
 
-        if (node) {
-            m_root->getChildren().insert(MTPFileNodePathKey(device), node);
-            m_root->getVisibleChildren().append(device);
-        }
+    QStringList oldDevices;
+    QVector<int> newDevices;
+
+    for (auto &deviceIter : m_root->getChildren()) {
+        oldDevices.append(deviceIter->getName());
     }
+
+    for (int i = 0; i < devices.size(); i++) {
+        const QString &newDevice = devices[i];
+        if (oldDevices.removeAll(newDevice) == 0)
+            newDevices.append(i);
+    }
+
+    //Remove old devices
+    if (!oldDevices.isEmpty()) {
+        int idMin = m_root->getVisibleChildren().size();
+        int idMax = 0;
+        for (const QString &oldDevice : oldDevices) {
+            int idVisible = m_root->visibleLocation(oldDevice);
+            if (idVisible < idMin)
+                idMin = idVisible;
+            if (idVisible > idMax)
+                idMax = idVisible;
+        }
+
+        beginRemoveRows(QModelIndex(), idMin, idMax);
+        for (const QString &oldDevice : oldDevices) {
+            MTPFileNode *oldNode = m_root->getChildren().take(oldDevice);
+            m_nodesToRemove.append(oldNode);
+            m_root->getVisibleChildren().removeAll(oldDevice);
+        }
+        endRemoveRows();
+    }
+
+    //Add new nodes
+    if (!newDevices.isEmpty()) {
+        int firstRow = m_root->getChildren().size();
+        beginInsertRows(QModelIndex(), firstRow, firstRow + newDevices.size() - 1);
+        for (int id : newDevices) {
+            const QString &newDevice = devices[id];
+            MTPFileNode *child = new MTPFileNode(newDevice, MTPFileNode::DEVICE, 0, QString(), m_iconProvider.icon(QFileIconProvider::Computer), m_root);
+            if (child) {
+                m_root->getChildren().insert(MTPFileNodePathKey(newDevice), child);
+                m_root->getVisibleChildren().append(newDevice);
+            }
+        }
+        endInsertRows();
+    }
+
     m_root->setPopulated();
+    sortChildren(*m_root);
 }
 
 void MTPFileModel::populate(const NodeContainer &container)
 {
+    cleanNodes();
+
     int row = container.m_node->getParent()->visibleLocation(container.m_node->getName());
     QModelIndex index = createIndex(row, 0, container.m_node);
-    QList<QString> oldChildren;
+    QStringList oldChildren;
     QVector<int> newChildren;
 
     for (auto &childIter : container.m_node->getChildren()) {
@@ -262,10 +310,7 @@ void MTPFileModel::populate(const NodeContainer &container)
         beginRemoveRows(index, idMin, idMax);
         for (const QString &oldName : oldChildren) {
             MTPFileNode *oldNode = container.m_node->getChildren().take(oldName);
-            if (oldNode) {
-                delete oldNode;
-                oldNode = nullptr;
-            }
+            m_nodesToRemove.append(oldNode);
             container.m_node->getVisibleChildren().removeAll(oldName);
         }
         endRemoveRows();
@@ -384,6 +429,16 @@ void MTPFileModel::refreshPath(const QString & path) const
     }
 }
 
+void MTPFileModel::cleanNodes()
+{
+    for (MTPFileNode *node : m_nodesToRemove) {
+        if (node)
+            delete node;
+        node = nullptr;
+    }
+    m_nodesToRemove.clear();
+}
+
 MTPFileNode::Type MTPFileModel::TypeConversion(WPDManager::ItemType type)
 {
     switch (type) {
@@ -450,9 +505,16 @@ MTPFileModel::Observer::~Observer()
 {
 }
 
+void MTPFileModel::Observer::addDevice(const QString & device)
+{
+    if (m_model.m_fetcher)
+        m_model.m_fetcher->updateDevices();
+}
+
 void MTPFileModel::Observer::removeDevice(const QString & device)
 {
-    m_model.refreshPath(device);
+    if (m_model.m_fetcher)
+        m_model.m_fetcher->updateDevices();
 }
 
 void MTPFileModel::Observer::addItem(const QString & path)

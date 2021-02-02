@@ -10,7 +10,7 @@
 
 
 WPDManager::WPDManager() :
-    m_hr_COM(E_FAIL), m_hr_init(E_FAIL)
+    m_hr_COM(E_FAIL), m_hr_init(E_FAIL), m_USBDetector(nullptr)
 {
     HeapSetInformation(nullptr, HeapEnableTerminationOnCorruption, nullptr, 0);
     m_hr_COM = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
@@ -20,14 +20,13 @@ WPDManager::WPDManager() :
     createPropertiesToRead();
     createObjectsToDelete();
     fetchDevices();
+    registerForUSBEvents();
 }
 
 WPDManager::~WPDManager()
 {
-    QMutexLocker locker(&m_mutex);
-
     m_removedDevices.clear();
-
+    unregisterForUSBEvents();
     m_deviceIDMap.clear();
     for (auto &deviceIter : m_deviceMap) {
         if (deviceIter.second) {
@@ -371,15 +370,26 @@ HRESULT WPDManager::createDeviceData(const QString & deviceID)
         if (device && content && properties && resources) {
             DeviceData *deviceData = new DeviceData(friendlyName, device, content, properties, resources);
             if (deviceData) {
+                startWriting();
                 auto &deviceIter = m_deviceMap.emplace(friendlyName, deviceData);
                 auto &deviceIDIter = m_deviceIDMap.emplace(deviceID, friendlyName);
                 if (deviceIter.second && deviceIDIter.second && deviceData->m_rootNode) {
                     auto &mapIter = deviceData->m_objectIDMap.emplace(deviceData->m_rootNode->m_objectID, deviceData->m_rootNode);
                     hr = mapIter.second ? S_OK : E_FAIL;
                 }
+                endWriting();
 
+                startReading();
                 if (SUCCEEDED(hr))
                     hr = registerForDeviceEvents(*deviceData);
+
+                if (SUCCEEDED(hr)) {
+                    for (Observer *observer : m_observers) {
+                        if (observer)
+                            observer->addDevice(friendlyName);
+                    }
+                }
+                endReading();
             }
         }
         else
@@ -389,9 +399,69 @@ HRESULT WPDManager::createDeviceData(const QString & deviceID)
     return hr;
 }
 
+HRESULT WPDManager::fetchDevices()
+{
+    HRESULT hr = E_FAIL;
+    if (SUCCEEDED(m_hr_init)) {
+        DWORD pnpDeviceIDCount = 0;
+        hr = m_deviceManager->GetDevices(nullptr, &pnpDeviceIDCount);
+
+        if (SUCCEEDED(hr) && (pnpDeviceIDCount > 0)) {
+            PWSTR* pnpDeviceIDs = new (std::nothrow) PWSTR[pnpDeviceIDCount];
+            if (pnpDeviceIDs != nullptr) {
+                ZeroMemory(pnpDeviceIDs, pnpDeviceIDCount * sizeof(PWSTR));
+                DWORD retrievedDeviceIDCount = pnpDeviceIDCount;
+                hr = m_deviceManager->GetDevices(pnpDeviceIDs, &retrievedDeviceIDCount);
+                if (retrievedDeviceIDCount <= pnpDeviceIDCount) {
+                    for (DWORD index = 0; index < retrievedDeviceIDCount && SUCCEEDED(hr); index++) {
+                        QString deviceID = QString::fromWCharArray(pnpDeviceIDs[index]);
+                        if (m_deviceIDMap.find(deviceID) == m_deviceIDMap.end())
+                            hr = createDeviceData(deviceID);
+                    }
+                }
+
+                for (DWORD index = 0; index < pnpDeviceIDCount; index++) {
+                    CoTaskMemFree(pnpDeviceIDs[index]);
+                    pnpDeviceIDs[index] = nullptr;
+                }
+
+                delete[] pnpDeviceIDs;
+                pnpDeviceIDs = nullptr;
+            }
+        }
+    }
+
+    return hr;
+}
+
+HRESULT WPDManager::registerForUSBEvents()
+{
+    HRESULT hr = E_FAIL;
+    if (!m_USBDetector) {
+        m_USBDetector = new WPDUSBDetector(*this);
+        if (m_USBDetector) {
+            m_USBDetector->start(QThread::LowPriority);
+            hr = S_OK;
+        }
+    }
+    return hr;
+}
+
+HRESULT WPDManager::unregisterForUSBEvents()
+{
+    HRESULT hr = E_FAIL;
+    if (m_USBDetector) {
+        delete m_USBDetector;
+        m_USBDetector = nullptr;
+        hr = S_OK;
+    }
+    return hr;
+}
+
 HRESULT WPDManager::registerForDeviceEvents(DeviceData &device)
 {
     HRESULT hr = E_FAIL;
+    startReading();
     if (device.m_eventCookie.isEmpty()) {
         PWSTR tempEventCookie = nullptr;
         Microsoft::WRL::ComPtr<WPDDeviceEventsCallback> callback = new (std::nothrow) WPDDeviceEventsCallback(*this);
@@ -406,6 +476,7 @@ HRESULT WPDManager::registerForDeviceEvents(DeviceData &device)
         CoTaskMemFree(tempEventCookie);
         tempEventCookie = nullptr;
     }
+    endReading();
 
     return hr;
 }
@@ -413,44 +484,14 @@ HRESULT WPDManager::registerForDeviceEvents(DeviceData &device)
 HRESULT WPDManager::unregisterForDeviceEvents(DeviceData &device)
 {
     HRESULT hr = E_FAIL;
+    startReading();
     if (!device.m_eventCookie.isEmpty()) {
         hr = device.m_device->Unadvise(device.m_eventCookie.toStdWString().c_str());
         device.m_eventCookie.clear();
     }
+    endReading();
 
     return hr;
-}
-
-void WPDManager::fetchDevices()
-{
-    if (SUCCEEDED(m_hr_init)) {
-        DWORD pnpDeviceIDCount = 0;
-        HRESULT hr = m_deviceManager->GetDevices(nullptr, &pnpDeviceIDCount);
-
-        if (SUCCEEDED(hr) && (pnpDeviceIDCount > 0)) {
-            PWSTR* pnpDeviceIDs = new (std::nothrow) PWSTR[pnpDeviceIDCount];
-            if (pnpDeviceIDs != nullptr) {
-                ZeroMemory(pnpDeviceIDs, pnpDeviceIDCount * sizeof(PWSTR));
-                DWORD retrievedDeviceIDCount = pnpDeviceIDCount;
-                hr = m_deviceManager->GetDevices(pnpDeviceIDs, &retrievedDeviceIDCount);
-                if (retrievedDeviceIDCount <= pnpDeviceIDCount) {
-                    for (DWORD index = 0; index < retrievedDeviceIDCount && SUCCEEDED(hr); index++) {
-                        hr = createDeviceData(QString::fromWCharArray(pnpDeviceIDs[index]));
-                    }
-                }
-
-                for (DWORD index = 0; index < pnpDeviceIDCount; index++) {
-                    CoTaskMemFree(pnpDeviceIDs[index]);
-                    pnpDeviceIDs[index] = nullptr;
-                }
-
-                delete[] pnpDeviceIDs;
-                pnpDeviceIDs = nullptr;
-            }
-        }
-
-        m_hr_init = hr;
-    }
 }
 
 WPDManager::DeviceNode *WPDManager::createNode(DeviceData &device, DeviceNode &parent, const QString &objectID)
@@ -589,9 +630,18 @@ QString WPDManager::findPath(const DeviceNode & node)
     return node.m_name;
 }
 
+void WPDManager::refreshDevices()
+{
+    //TODO need to wait for windows
+    m_removedDevices.clear();
+    m_deviceManager->RefreshDeviceList();
+    fetchDevices();
+    //TODO CHECKIF IT WORKS
+}
+
 void WPDManager::removeDevice(const QString & deviceID)
 {
-    QMutexLocker locker(&m_mutex);
+    startWriting();
     auto &deviceIDIter = m_deviceIDMap.find(deviceID);
     if (deviceIDIter == m_deviceIDMap.end())
         return;
@@ -601,18 +651,28 @@ void WPDManager::removeDevice(const QString & deviceID)
 
     auto &deviceIter = m_deviceMap.find(deviceName);
     if (deviceIter != m_deviceMap.end()) {
+        DeviceData *deviceToRemove = nullptr;
+
         if (deviceIter->second) {
             m_removedDevices.push_back(deviceIter->second->m_device);
-            unregisterForDeviceEvents(*deviceIter->second);
-            delete deviceIter->second;
+            deviceToRemove = deviceIter->second;
         }
         deviceIter->second = nullptr;
         m_deviceMap.erase(deviceIter);
+        endWriting();
+
+        if (deviceToRemove) {
+            unregisterForDeviceEvents(*deviceToRemove);
+            delete deviceToRemove;
+            deviceToRemove = nullptr;
+        }
         
+        startReading();
         for (Observer *observer : m_observers) {
             if (observer)
                 observer->removeDevice(deviceName);
         }
+        endReading();
     }
 }
 

@@ -33,7 +33,7 @@ public:
     QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
 
 public slots:
-    void addDevices(const QStringList &devices);
+    void updateDevices(const QStringList &devices);
     void populate(const NodeContainer &container);
 
 private:
@@ -44,6 +44,7 @@ private:
         ~Observer();
 
     public:
+        void addDevice(const QString &device);
         void removeDevice(const QString &device);
         void addItem(const QString &path);
         void updateItem(const QString &path);
@@ -59,6 +60,7 @@ private:
     MTPFileNode *indexNode(const QModelIndex &index) const;
     MTPFileNode *pathNode(const QString &path) const;
     void refreshPath(const QString &path) const;
+    void cleanNodes();
 
 private:
     static MTPFileNode::Type TypeConversion(WPDManager::ItemType type);
@@ -70,6 +72,7 @@ private:
     Observer *m_observer;
     MTPFileFetcher *m_fetcher;
     MTPFileNode *m_root;
+    QVector<MTPFileNode *> m_nodesToRemove;
     QStack<QString> m_rootStack;
     QFileIconProvider m_iconProvider;
 };
