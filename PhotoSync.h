@@ -2,6 +2,7 @@
 
 #include <QMainWindow>
 #include "ui_PhotoSync.h"
+#include "Settings.h"
 #include "WPDManager.h"
 #include "FileExplorerDialog.h"
 #include "FileManager.h"
@@ -36,6 +37,7 @@ signals:
 private:
     Ui::PhotoSyncClass m_ui;
     QString m_positiveDefaultText;
+    Settings *m_settings;
     FileExplorerDialog *m_fileDialog;
     FileManager *m_fileManager;
 

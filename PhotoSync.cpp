@@ -5,15 +5,26 @@
 WPDManager *PhotoSync::WPDInstance = nullptr;
 
 PhotoSync::PhotoSync(QWidget *parent)
-    : QMainWindow(parent), m_fileManager(nullptr), m_fileDialog(nullptr)
+    : QMainWindow(parent), m_settings(nullptr), m_fileDialog(nullptr), m_fileManager(nullptr)
 {
     m_ui.setupUi(this);
     m_ui.progressBar->setValue(0);
 
     m_positiveDefaultText = m_ui.positivePushButton->text();
 
-    m_fileManager = new FileManager(this);
+    m_settings = new Settings(QCoreApplication::applicationDirPath());
     m_fileDialog = new FileExplorerDialog(this);
+    m_fileManager = new FileManager(this);
+
+    if (m_settings && m_settings->parseConfigFile()) {
+        QString importPath, exportPath;
+        bool remove = false;
+
+        m_settings->getConfig(importPath, exportPath, remove);
+        m_ui.importEdit->setText(importPath);
+        m_ui.exportEdit->setText(exportPath);
+        m_ui.removeCheckBox->setChecked(remove);
+    }
 
     QObject::connect(m_ui.importToolButton, &QToolButton::clicked, this, &PhotoSync::askImportFolder);
     QObject::connect(m_ui.exportToolButton, &QToolButton::clicked, this, &PhotoSync::askExportFolder);
@@ -28,14 +39,6 @@ PhotoSync::PhotoSync(QWidget *parent)
         QObject::connect(m_fileManager, &FileManager::finished, this, &PhotoSync::finish);
         QObject::connect(this, &PhotoSync::warningAnswer, m_fileManager, &FileManager::warningAnswer);
     }
-
-    //DEBUG
-    m_ui.importEdit->setText("Juju S8/Phone/IMPORT_PHOTOSYNC");
-    //m_ui.importEdit->setText("C:/Users/Julian Bustillos/Downloads/IMPORT_PHOTOSYNC");
-    //m_ui.exportEdit->setText("Juju S8/Phone/EXPORT_PHOTOSYNC");
-    m_ui.exportEdit->setText("C:/Users/Julian Bustillos/Downloads/EXPORT_PHOTOSYNC");
-
-    //DEBUG
 }
 
 PhotoSync::~PhotoSync()
@@ -47,6 +50,10 @@ PhotoSync::~PhotoSync()
     if (m_fileDialog)
         delete m_fileDialog;
     m_fileDialog = nullptr;
+
+    if (m_settings)
+        delete m_settings;
+    m_settings = nullptr;
 
     if (WPDInstance)
         delete WPDInstance;
@@ -88,6 +95,9 @@ void PhotoSync::askExportFolder()
 
 void PhotoSync::run()
 {
+    if (m_settings)
+        m_settings->setConfig(m_ui.importEdit->text(), m_ui.exportEdit->text(), m_ui.removeCheckBox->isChecked());
+    
     if (m_fileManager) {
         QObject::disconnect(m_ui.positivePushButton, nullptr, nullptr, nullptr);
         QObject::connect(m_ui.positivePushButton, &QToolButton::clicked, m_fileManager, &FileManager::cancel);
@@ -125,4 +135,7 @@ void PhotoSync::finish()
     QObject::disconnect(m_ui.positivePushButton, nullptr, nullptr, nullptr);
     QObject::connect(m_ui.positivePushButton, &QToolButton::clicked, this, &PhotoSync::run);
     m_ui.positivePushButton->setText(m_positiveDefaultText);
+
+    if (m_settings)
+        m_settings->exportConfigFile();
 }
