@@ -136,6 +136,6 @@ void PhotoSync::finish()
     QObject::connect(m_ui.positivePushButton, &QToolButton::clicked, this, &PhotoSync::run);
     m_ui.positivePushButton->setText(m_positiveDefaultText);
 
-    if (m_settings)
+    if (m_settings && m_fileManager && m_fileManager->getStatus())
         m_settings->exportConfigFile();
 }
