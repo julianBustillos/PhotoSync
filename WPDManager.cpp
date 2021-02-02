@@ -14,6 +14,11 @@ WPDManager::WPDManager() :
 {
     HeapSetInformation(nullptr, HeapEnableTerminationOnCorruption, nullptr, 0);
     m_hr_COM = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+    if (!SUCCEEDED(m_hr_COM)) {
+        CoUninitialize();
+        m_hr_COM = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+    }
+
     m_hr_init = CoCreateInstance(CLSID_PortableDeviceManager, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&m_deviceManager));
 
     createClientInformation();

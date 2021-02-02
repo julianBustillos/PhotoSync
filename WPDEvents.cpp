@@ -16,7 +16,7 @@ WPDUSBDetector::WPDUSBDetector(WPDManager & manager) :
 
 WPDUSBDetector::~WPDUSBDetector()
 {
-    SendMessage(m_hWnd, MESSAGE_EXIT_WPDUSBDETECTOR, 0, 0);
+    PostMessage(m_hWnd, MESSAGE_EXIT_WPDUSBDETECTOR, 0, 0);
     wait();
 }
 
@@ -24,9 +24,13 @@ void WPDUSBDetector::run()
 {
     initialize();
 
+    int ret = 0;
     MSG msg;
     forever{
-        if (GetMessage(&msg, m_hWnd, 0, 0) == 0)
+        ret = GetMessage(&msg, NULL, 0, 0);
+        TranslateMessage(&msg);	
+        DispatchMessage(&msg);
+        if (ret <= 0)
             break;
     }
 
@@ -70,6 +74,7 @@ void WPDUSBDetector::finalize()
 LRESULT WPDUSBDetector::connectedUSBCallback(HWND__ *hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     WPDUSBDetector* detector = nullptr;
+    LRESULT lRet = 1;
 
     switch (message) {
     case WM_CREATE:
@@ -81,7 +86,7 @@ LRESULT WPDUSBDetector::connectedUSBCallback(HWND__ *hWnd, UINT message, WPARAM 
         if (wParam == DBT_DEVICEARRIVAL) {
             detector = reinterpret_cast<WPDUSBDetector *>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
             if (detector)
-                detector->m_arrivalCount += 2;
+                detector->m_arrivalCount = 2;
         }
         else if (wParam == DBT_DEVNODES_CHANGED) {
             detector = reinterpret_cast<WPDUSBDetector *>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
@@ -94,9 +99,13 @@ LRESULT WPDUSBDetector::connectedUSBCallback(HWND__ *hWnd, UINT message, WPARAM 
     case MESSAGE_EXIT_WPDUSBDETECTOR:
         PostQuitMessage(0);
         break;
+
+    default:
+        lRet = DefWindowProc(hWnd, message, wParam, lParam);
+        break;
     }
 
-    return 1;
+    return lRet;
 }
 
 
