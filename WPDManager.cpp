@@ -5,7 +5,7 @@
 #include <Shlwapi.h>
 #include <Propvarutil.h>
 
-#define WPD_NUM_OBJECTS_TO_REQUEST 10 //TODO: CHANGE ?
+#define WPD_NUM_OBJECTS_TO_REQUEST 100
 #define WPD_WAIT_TIMEOUT 10000
 
 
