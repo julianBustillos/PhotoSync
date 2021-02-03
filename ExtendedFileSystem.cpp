@@ -1,6 +1,6 @@
 #include "ExtendedFileSystem.h"
 #include "MTPFileSystem.h"
-#include "PhotoSync.h"
+#include "WPDInstance.h"
 #include <QDirIterator>
 #include <QFileInfo>
 #include <QFile>
@@ -21,7 +21,7 @@ ExtendedFileSystem::Path::Path(const QString & path) :
             m_type = SYSTEM;
         else {
             QStringList devices;
-            PhotoSync::getWPDInstance().getDevices(devices);
+            WPDInstance::get().getDevices(devices);
             for (const QString &device : devices) {
                 if (device == splittedPath[0]) {
                     m_type = MTP;

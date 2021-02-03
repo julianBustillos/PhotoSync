@@ -1,5 +1,5 @@
 #include "MTPFileSystem.h"
-#include "PhotoSync.h"
+#include "WPDInstance.h"
 
 
 /* MTPFileSystem::DirIterator */
@@ -36,7 +36,7 @@ void MTPFileSystem::DirIterator::findNext(const QString & current)
         for (int i = 1; i < level - 1; i++)
             path += "/" + splittedPath[i];
         QVector<WPDManager::Item> content;
-        PhotoSync::getWPDInstance().getContent(path, content);
+        WPDInstance::get().getContent(path, content);
 
         int id = -1;
         if (!splittedPath[level - 1].isEmpty()) {
@@ -120,13 +120,13 @@ void MTPFileSystem::FileInfo::setFile(const QString &name)
 int MTPFileSystem::FileInfo::size() const
 {
     WPDManager::Item item;
-    PhotoSync::getWPDInstance().getItem(m_path, item);
+    WPDInstance::get().getItem(m_path, item);
     return item.m_size;
 }
 
 bool MTPFileSystem::FileInfo::exists() const
 {
-    return PhotoSync::getWPDInstance().getItem(m_path, WPDManager::Item());
+    return WPDInstance::get().getItem(m_path, WPDManager::Item());
 }
 
 
@@ -149,11 +149,11 @@ bool MTPFileSystem::File::open(QIODevice::OpenMode mode)
 
     switch (m_mode) {
     case QIODevice::ReadOnly:
-        return PhotoSync::getWPDInstance().getItem(m_path, item) && (item.m_type == WPDManager::FILE) && (m_size = item.m_size);
+        return WPDInstance::get().getItem(m_path, item) && (item.m_type == WPDManager::FILE) && (m_size = item.m_size);
     case QIODevice::WriteOnly:
         int index = m_path.lastIndexOf("/");
         if (index > 0)
-            return PhotoSync::getWPDInstance().getItem(m_path.left(index), item) && (item.m_type != WPDManager::FILE) &&!PhotoSync::getWPDInstance().getItem(m_path, item);
+            return WPDInstance::get().getItem(m_path.left(index), item) && (item.m_type != WPDManager::FILE) &&!WPDInstance::get().getItem(m_path, item);
     }
 
     m_mode = QIODevice::NotOpen;
@@ -164,7 +164,7 @@ qint64 MTPFileSystem::File::write(const QByteArray & fileData)
 {
     if (m_mode == QIODevice::WriteOnly) {
         int index = m_path.lastIndexOf("/");
-        if (PhotoSync::getWPDInstance().createFile(m_path.left(index), m_path.right(m_path.size() - index - 1), fileData.data(), fileData.size()))
+        if (WPDInstance::get().createFile(m_path.left(index), m_path.right(m_path.size() - index - 1), fileData.data(), fileData.size()))
             return fileData.size();
     }
     return -1;
@@ -174,7 +174,7 @@ QByteArray MTPFileSystem::File::readAll()
 {
     if (m_mode == QIODevice::ReadOnly && m_size > 0) {
         QByteArray fileData(m_size, '0');
-        if (PhotoSync::getWPDInstance().readData(m_path, fileData.data()))
+        if (WPDInstance::get().readData(m_path, fileData.data()))
             return fileData;
     }
     return QByteArray();
@@ -189,7 +189,7 @@ void MTPFileSystem::File::close()
 bool MTPFileSystem::File::remove()
 {
     if (m_mode == QIODevice::NotOpen) {
-        return PhotoSync::getWPDInstance().deleteObject(m_path);
+        return WPDInstance::get().deleteObject(m_path);
     }
     return false;
 }
@@ -211,7 +211,7 @@ QString MTPFileSystem::Dir::path(const QString &concatenate) const
 
 bool MTPFileSystem::Dir::exists() const
 {
-    return PhotoSync::getWPDInstance().getItem(m_path, WPDManager::Item());
+    return WPDInstance::get().getItem(m_path, WPDManager::Item());
 }
 
 bool MTPFileSystem::Dir::mkpath(const QString & dirPath) const
@@ -224,8 +224,8 @@ bool MTPFileSystem::Dir::mkpath(const QString & dirPath) const
     QString existingPath = m_path;
     while (index < folders.size() && created) {
         QString pathToCreate = existingPath + "/" + folders[index];
-        if (!PhotoSync::getWPDInstance().getItem(pathToCreate, WPDManager::Item()))
-            created = PhotoSync::getWPDInstance().createFolder(existingPath, folders[index]);
+        if (!WPDInstance::get().getItem(pathToCreate, WPDManager::Item()))
+            created = WPDInstance::get().createFolder(existingPath, folders[index]);
         existingPath = pathToCreate;
         index++;
     }

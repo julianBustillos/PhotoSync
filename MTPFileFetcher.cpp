@@ -1,7 +1,6 @@
 #include "MTPFileFetcher.h"
 #include "MTPFileModel.h"
-#include "PhotoSync.h"
-#include "WPDManager.h"
+#include "WPDInstance.h"
 
 
 MTPFileFetcher::MTPFileFetcher(QObject *parent) :
@@ -21,7 +20,7 @@ MTPFileFetcher::~MTPFileFetcher()
 void MTPFileFetcher::fetchDevices()
 {
     QStringList devices;
-    if (PhotoSync::getWPDInstance().getDevices(devices))
+    if (WPDInstance::get().getDevices(devices))
         emit loadedDevices(devices);
 }
 
@@ -67,6 +66,6 @@ void MTPFileFetcher::run()
 void MTPFileFetcher::fetch(MTPFileNode *node)
 {
     QVector<WPDManager::Item> *content = new QVector<WPDManager::Item>();
-    if (content && PhotoSync::getWPDInstance().getContent(node->getPath(), *content))
+    if (content && WPDInstance::get().getContent(node->getPath(), *content))
         emit loadedContent(NodeContainer(node, content));
 }

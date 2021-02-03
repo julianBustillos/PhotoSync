@@ -2,8 +2,6 @@
 #include <QMessageBox>
 
 
-WPDManager *PhotoSync::WPDInstance = nullptr;
-
 PhotoSync::PhotoSync(QWidget *parent)
     : QMainWindow(parent), m_settings(nullptr), m_fileDialog(nullptr), m_fileManager(nullptr)
 {
@@ -54,17 +52,6 @@ PhotoSync::~PhotoSync()
     if (m_settings)
         delete m_settings;
     m_settings = nullptr;
-
-    if (WPDInstance)
-        delete WPDInstance;
-    WPDInstance = nullptr;
-}
-
-WPDManager & PhotoSync::getWPDInstance()
-{
-    if (!WPDInstance)
-        WPDInstance = new WPDManager();
-    return *WPDInstance;
 }
 
 void PhotoSync::askImportFolder()

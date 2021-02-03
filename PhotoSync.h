@@ -16,9 +16,6 @@ public:
     PhotoSync(QWidget *parent = Q_NULLPTR);
     ~PhotoSync();
 
-public:
-    static WPDManager &getWPDInstance(); //TODO: change this singleton !!!!!
-
 private :
     void askImportFolder();
     void askExportFolder();
@@ -40,7 +37,4 @@ private:
     Settings *m_settings;
     FileExplorerDialog *m_fileDialog;
     FileManager *m_fileManager;
-
-private:
-    static WPDManager *WPDInstance;
 };

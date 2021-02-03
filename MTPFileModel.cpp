@@ -1,5 +1,5 @@
 #include "MTPFileModel.h"
-#include "PhotoSync.h"
+#include "WPDInstance.h"
 #include <QVector>
 #include <QLocale>
 
@@ -12,7 +12,7 @@ MTPFileModel::MTPFileModel(QObject * parent) :
     m_observer = new Observer(*this);
 
     if (m_observer)
-        PhotoSync::getWPDInstance().registerForEvents(m_observer);
+        WPDInstance::get().registerForEvents(m_observer);
     if (m_fetcher) {
         QObject::connect(m_fetcher, &MTPFileFetcher::loadedDevices, this, &MTPFileModel::updateDevices);
         QObject::connect(m_fetcher, &MTPFileFetcher::loadedContent, this, &MTPFileModel::populate);
@@ -25,7 +25,7 @@ MTPFileModel::~MTPFileModel()
     cleanNodes();
 
     if (m_observer) {
-        PhotoSync::getWPDInstance().unregisterForEvents(m_observer);
+        WPDInstance::get().unregisterForEvents(m_observer);
         delete m_observer;
     }
     m_observer = nullptr;

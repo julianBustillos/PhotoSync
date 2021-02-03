@@ -110,6 +110,7 @@
     <ClCompile Include="MTPFileSystem.cpp" />
     <ClCompile Include="Settings.cpp" />
     <ClCompile Include="WPDEvents.cpp" />
+    <ClCompile Include="WPDInstance.cpp" />
     <ClCompile Include="WPDManager.cpp" />
     <QtRcc Include="PhotoSync.qrc" />
     <QtUic Include="FileExplorerDialog.ui" />
@@ -143,6 +144,7 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="Settings.h" />
     <ClInclude Include="WPDEvents.h" />
+    <ClInclude Include="WPDInstance.h" />
     <ClInclude Include="WPDManager.h" />
     <QtMoc Include="FileExplorerDialog.h" />
     <QtMoc Include="FileManager.h" />
