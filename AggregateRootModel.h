@@ -11,7 +11,7 @@ public:
     virtual ~AggregateRootModel();
 
 public:
-    void setRootPath(const QString &newPath) override;
+    void setCurrentPath(const QString &newPath) override;
     QString filePath(const QModelIndex &index) const override;
 
     QModelIndex	index(int row, int column, const QModelIndex &parent = QModelIndex()) const override;

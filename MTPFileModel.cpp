@@ -39,35 +39,35 @@ MTPFileModel::~MTPFileModel()
     m_root = nullptr;
 }
 
-void MTPFileModel::setRootPath(const QString & newPath)
+void MTPFileModel::setCurrentPath(const QString & newPath)
 {
-    m_rootStack.clear();
+    m_currentStack.clear();
     QList<QString> splittedPath = QString(newPath).replace('\\', '/').split('/');
     for (auto fileName = splittedPath.rbegin(); fileName != splittedPath.rend(); fileName++)
-        m_rootStack.push(*fileName);
+        m_currentStack.push(*fileName);
 
     MTPFileNode *node = m_root;
 
-    while (node && node->isPopulated() && !m_rootStack.isEmpty()) {
-        QString &fileName = m_rootStack.top();
+    while (node && node->isPopulated() && !m_currentStack.isEmpty()) {
+        QString &fileName = m_currentStack.top();
         node = node->getChildren().value(fileName);
-        m_rootStack.pop();
+        m_currentStack.pop();
     }
 
     if (!node) {
-        m_rootStack.clear();
+        m_currentStack.clear();
         return;
     }
 
-    if (m_fetcher && !m_rootStack.isEmpty()) {
-        m_rootStack.push(node->getName());
+    if (m_fetcher && !m_currentStack.isEmpty()) {
+        m_currentStack.push(node->getName());
         m_fetcher->addToFetch(node);
         return;
     }
 
     if (node && node->getParent()) {
         int row = node->getParent()->visibleLocation(node->getName());
-        emit rootPathChanged(createIndex(row, 0, node));
+        emit currentPathChanged(createIndex(row, 0, node));
     }
 }
 
@@ -336,18 +336,18 @@ void MTPFileModel::populate(const NodeContainer &container)
     sortChildren(*container.m_node);
 
     //SetRootPath management
-    if (!m_rootStack.isEmpty()) {
-        const QString &fileName = m_rootStack.top();
+    if (!m_currentStack.isEmpty()) {
+        const QString &fileName = m_currentStack.top();
         if (container.m_node->getName() == fileName) {
-            m_rootStack.pop();
-            if (m_rootStack.isEmpty())
-                emit rootPathChanged(index);
+            m_currentStack.pop();
+            if (m_currentStack.isEmpty())
+                emit currentPathChanged(index);
             else if (m_fetcher) {
-                MTPFileNode *child = container.m_node->getChildren().value(m_rootStack.top());
+                MTPFileNode *child = container.m_node->getChildren().value(m_currentStack.top());
                 if (child)
                     m_fetcher->addToFetch(child);
                 else
-                    m_rootStack.clear();
+                    m_currentStack.clear();
             }
         }
     }

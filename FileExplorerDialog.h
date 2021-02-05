@@ -18,7 +18,7 @@ public:
     QString getDirectory();
 
 public slots:
-    void rootPathChanged(const QModelIndex &rootPathIndex);
+    void currentPathChanged(const QModelIndex &currentPathIndex);
 
 private:
     void chooseDirectory();

@@ -11,11 +11,11 @@ public:
     virtual ~AggregableItemModel() {};
 
 signals:
-    void rootPathChanged(const QModelIndex &rootPathIndex);
+    void currentPathChanged(const QModelIndex &currentPathIndex);
 
 public:
     //Begin to implement
-    virtual void setRootPath(const QString &newPath) = 0;
+    virtual void setCurrentPath(const QString &newPath) = 0;
     virtual QString filePath(const QModelIndex &index) const = 0;
 
     virtual QModelIndex	index(int row, int column, const QModelIndex &parent = QModelIndex()) const = 0;

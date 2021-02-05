@@ -11,7 +11,7 @@ public:
 public:
     void addModel(AggregableItemModel *model);
 
-    void setRootPath(const QString &newPath);
+    void setCurrentPath(const QString &newPath) override;
     QString filePath(const QModelIndex &index) const;
 
 protected:
@@ -27,7 +27,7 @@ private:
     };
 
 private slots:
-void sourceRootPathChanged(const QModelIndex &rootPathIndex);
+    void sourceCurrentPathChanged(const QModelIndex &currentPathIndex);
 
 private:
     void connectRootPathChanged(AggregableItemModel &model) const;

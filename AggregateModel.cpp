@@ -31,10 +31,10 @@ void AggregateModel::addModel(AggregableItemModel * model)
     }
 }
 
-void AggregateModel::setRootPath(const QString & newPath)
+void AggregateModel::setCurrentPath(const QString & newPath)
 {
     for (int sourceID = 1; sourceID < m_sourceModels.size(); sourceID++) {
-        m_sourceModels[sourceID]->setRootPath(newPath);
+        m_sourceModels[sourceID]->setCurrentPath(newPath);
     }
 }
 
@@ -92,14 +92,14 @@ int AggregateModel::rowFromSource(const QModelIndex & sourceIndex, int row) cons
     return sourceIndex.isValid() ? row : row + getRowOffset(sourceIndex.model());
 }
 
-void AggregateModel::sourceRootPathChanged(const QModelIndex &rootPathIndex)
+void AggregateModel::sourceCurrentPathChanged(const QModelIndex &currentPathIndex)
 {
-    emit rootPathChanged(mapFromSource(rootPathIndex));
+    emit currentPathChanged(mapFromSource(currentPathIndex));
 }
 
 void AggregateModel::connectRootPathChanged(AggregableItemModel &model) const
 {
-    QObject::connect(&model, &AggregableItemModel::rootPathChanged, this, &AggregateModel::sourceRootPathChanged);
+    QObject::connect(&model, &AggregableItemModel::currentPathChanged, this, &AggregateModel::sourceCurrentPathChanged);
 }
 
 int AggregateModel::getRowOffset(const QAbstractItemModel * model) const

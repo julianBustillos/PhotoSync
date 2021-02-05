@@ -10,7 +10,7 @@ AggregateRootModel::~AggregateRootModel()
 {
 }
 
-void AggregateRootModel::setRootPath(const QString & newPath)
+void AggregateRootModel::setCurrentPath(const QString & newPath)
 {
 }
 
