@@ -28,6 +28,8 @@ FileExplorerDialog::~FileExplorerDialog()
 
 void FileExplorerDialog::setDirectory(QString directory)
 {
+    m_directory = QString();
+    m_ui.fileTreeView->setCurrentIndex(QModelIndex());
     m_ui.fileTreeView->collapseAll();
     if (m_aggregableModel)
         m_aggregableModel->setCurrentPath(directory);

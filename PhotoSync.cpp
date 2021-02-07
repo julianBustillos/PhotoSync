@@ -59,11 +59,9 @@ void PhotoSync::askImportFolder()
     if (m_fileDialog) {
         m_fileDialog->setWindowTitle("Import directory path");
         m_fileDialog->setDirectory(m_ui.importEdit->text());
-        m_fileDialog->exec();
-        QString directory = m_fileDialog->getDirectory();
-
-        if (!directory.isEmpty())
-            m_ui.importEdit->setText(directory);
+        int code = m_fileDialog->exec();
+        if (code == QDialog::Accepted)
+            m_ui.importEdit->setText(m_fileDialog->getDirectory());
     }
 }
 
@@ -72,11 +70,9 @@ void PhotoSync::askExportFolder()
     if (m_fileDialog) {
         m_fileDialog->setWindowTitle("Export directory path");
         m_fileDialog->setDirectory(m_ui.exportEdit->text());
-        m_fileDialog->exec();
-        QString directory = m_fileDialog->getDirectory();
-
-        if (!directory.isEmpty())
-            m_ui.exportEdit->setText(directory);
+        int code = m_fileDialog->exec();
+        if (code == QDialog::Accepted)
+            m_ui.importEdit->setText(m_fileDialog->getDirectory());
     }
 }
 
