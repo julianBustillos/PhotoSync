@@ -72,7 +72,7 @@ void PhotoSync::askExportFolder()
         m_fileDialog->setDirectory(m_ui.exportEdit->text());
         int code = m_fileDialog->exec();
         if (code == QDialog::Accepted)
-            m_ui.importEdit->setText(m_fileDialog->getDirectory());
+            m_ui.exportEdit->setText(m_fileDialog->getDirectory());
     }
 }
 
