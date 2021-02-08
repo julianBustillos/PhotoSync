@@ -74,7 +74,7 @@ void FileManager::run()
         printElapsedTime(startTime, endTime);
     }
 
-    m_status &= m_cancelled.loadRelaxed();
+    m_status &= !m_cancelled.loadRelaxed();
 }
 
 bool FileManager::checkDir()
@@ -199,6 +199,8 @@ void FileManager::buildImportFileData()
                     copyFile = false;
                     m_duplicateCount++;
                     emit progressBarValue(++m_progress);
+                    if (!m_removeFiles)
+                        emit progressBarValue(++m_progress);
                     break;
                 }
             }
@@ -225,6 +227,7 @@ void FileManager::buildImportFileData()
             m_removeCount++;
         else
             m_importErrors.insert(path);
+        emit progressBarValue(++m_progress);
     }
 }
 
@@ -279,6 +282,7 @@ void FileManager::exportFiles()
 
         if (!copy || (m_removeFiles && !remove))
             m_importErrors.insert(importFileInfo.path());
+
         emit progressBarValue(++m_progress);
     }
 
