@@ -5,12 +5,13 @@
 #include <Shlwapi.h>
 #include <Propvarutil.h>
 
+
 #define WPD_NUM_OBJECTS_TO_REQUEST 100
-#define WPD_WAIT_TIMEOUT 10000
+#define WPD_WAIT_TIMEOUT 1000
 
 
 WPDManager::WPDManager() :
-    m_hr_COM(E_FAIL), m_hr_init(E_FAIL), m_USBDetector(nullptr)
+    m_hr_COM(E_FAIL), m_hr_init(E_FAIL), m_USBDetector(nullptr), m_objectsToWait(0)
 {
     HeapSetInformation(nullptr, HeapEnableTerminationOnCorruption, nullptr, 0);
     m_hr_COM = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
@@ -72,7 +73,7 @@ bool WPDManager::getItem(const QString &path, Item &item)
     DeviceNode *node = findNode(path);
     if (node) {
         item.m_name = path.right(path.size() - path.lastIndexOf('/') - 1);
-        item.m_type = node->m_type;
+        item.m_type = (ItemType)node->m_type;
         item.m_date = node->m_date;
         item.m_size = node->m_size;
     }
@@ -144,16 +145,18 @@ bool WPDManager::createFolder(const QString & path, const QString & folderName)
         DeviceData *device = findDevice(path);
         DeviceNode *node = findNode(path);
 
-        if (device && node && (node->m_type == FOLDER || node->m_type == DRIVE)) {
+        if (device && node && (node->m_type == ItemType::FOLDER || node->m_type == ItemType::DRIVE)) {
             Microsoft::WRL::ComPtr<IPortableDeviceValues> objectProperties;
 
             hr = createBasicObjectProperties(objectProperties, node->m_objectID, folderName, WPD_CONTENT_TYPE_FOLDER);
 
-            if (SUCCEEDED(hr))
+            if (SUCCEEDED(hr)) {
+                m_objectsToWait = 1;
                 hr = device->m_content->CreateObjectWithPropertiesOnly(objectProperties.Get(), nullptr);
+            }
 
             if (SUCCEEDED(hr))
-                hr = waitWriting() ? S_OK : E_FAIL;
+                waitObjects();
         }
         endWriting();
     }
@@ -172,7 +175,7 @@ bool WPDManager::createFile(const QString & path, const QString & fileName, cons
         startWriting();
         DeviceData *device = findDevice(path);
         DeviceNode *node = findNode(path);
-        if (device && node && (node->m_type == FOLDER || node->m_type == DRIVE)) {
+        if (device && node && (node->m_type == ItemType::FOLDER || node->m_type == ItemType::DRIVE)) {
             Microsoft::WRL::ComPtr<IPortableDeviceValues> objectProperties;
 
             hr = createBasicObjectProperties(objectProperties, node->m_objectID, fileName, WPD_CONTENT_TYPE_UNSPECIFIED);
@@ -180,8 +183,10 @@ bool WPDManager::createFile(const QString & path, const QString & fileName, cons
             if (SUCCEEDED(hr))
                hr = objectProperties->SetUnsignedLargeIntegerValue(WPD_OBJECT_SIZE, size);
 
-            if (SUCCEEDED(hr))
+            if (SUCCEEDED(hr)) {
+                m_objectsToWait = 1;
                 hr = device->m_content->CreateObjectWithPropertiesAndData(objectProperties.Get(), &stream, &optimalTransferSize, nullptr);
+            }
         }
 
         if (SUCCEEDED(hr) && stream && optimalTransferSize) {
@@ -201,7 +206,7 @@ bool WPDManager::createFile(const QString & path, const QString & fileName, cons
                 hr = (remainingBytes == 0) ? stream->Commit(STGC_DEFAULT) : E_FAIL;
 
             if (SUCCEEDED(hr))
-                hr = waitWriting() ? S_OK : E_FAIL;
+                waitObjects();
         }
         endWriting();
     }
@@ -209,35 +214,68 @@ bool WPDManager::createFile(const QString & path, const QString & fileName, cons
     return SUCCEEDED(hr);
 }
 
-bool WPDManager::deleteObject(const QString & path)
+int WPDManager::deleteObjects(const QStringList& paths, QVector<bool>& results)
 {
+    if (paths.empty())
+        return 0;
+
+    int deleteCount = 0;
     HRESULT hr = E_FAIL;
 
     startWriting();
-    DeviceData *device = findDevice(path);
-    DeviceNode *node = findNode(path);
-    if (device && node) {
-        hr = node->m_children.empty() ? S_OK : E_FAIL;
-        PROPVARIANT pv = { 0 };
+    DeviceData* mainDevice = findDevice(paths[0]);
+    if (mainDevice) {
+        hr = S_OK;
+        for (int pathID = 0; pathID < paths.size() && SUCCEEDED(hr); pathID++) {
+            DeviceData* device = findDevice(paths[pathID]);
+            DeviceNode* node = findNode(paths[pathID]);
+
+            if (device == mainDevice && node) {
+                hr = node->m_children.empty() ? S_OK : E_FAIL;
+                PROPVARIANT pv = { 0 };
+
+                if (SUCCEEDED(hr))
+                    hr = InitPropVariantFromString(node->m_objectID.toStdWString().c_str(), &pv);
+
+                if (SUCCEEDED(hr))
+                    hr = m_objectsToDelete->Add(&pv);
+
+                PropVariantClear(&pv);
+            }
+            else
+                hr = E_FAIL;
+        }
+
+        if (SUCCEEDED(hr)) {
+            m_objectsToWait = paths.size();
+            Microsoft::WRL::ComPtr<IPortableDevicePropVariantCollection> objectsHR;
+            hr = mainDevice->m_content->Delete(PORTABLE_DEVICE_DELETE_NO_RECURSION, m_objectsToDelete.Get(), &objectsHR);
+
+            DWORD dwCount = 0;
+            objectsHR->GetCount(&dwCount);
+            for (DWORD dwIndex = 0; dwIndex < dwCount; dwIndex++)
+            {
+                PROPVARIANT pv = { 0 };
+                PropVariantInit(&pv);
+                hr = objectsHR->GetAt(dwIndex, &pv);
+                if (SUCCEEDED(hr)) {
+                    results[dwIndex] = SUCCEEDED(pv.scode);
+                    if (results[dwIndex])
+                        deleteCount++;
+                }
+
+                PropVariantClear(&pv);
+            }
+        }
 
         if (SUCCEEDED(hr))
-            hr = InitPropVariantFromString(node->m_objectID.toStdWString().c_str(), &pv);
-        
-        if (SUCCEEDED(hr))
-            hr = m_objectsToDelete->Add(&pv);
-
-        if (SUCCEEDED(hr))
-            hr = device->m_content->Delete(PORTABLE_DEVICE_DELETE_NO_RECURSION, m_objectsToDelete.Get(), nullptr);
-
-        if (SUCCEEDED(hr))
-            hr = waitWriting() ? S_OK : E_FAIL;
+            waitObjects();
 
         m_objectsToDelete->Clear();
-        PropVariantClear(&pv);
     }
 
     endWriting();
-    return SUCCEEDED(hr);
+    return SUCCEEDED(hr) ? deleteCount : 0;
 }
 
 bool WPDManager::registerForEvents(Observer * observer)
@@ -560,13 +598,13 @@ bool WPDManager::fetchData(const DeviceData &device, DeviceNode &node)
             if (categoryGUID != WPD_FUNCTIONAL_CATEGORY_STORAGE)
                 return false;
 
-            node.m_type = DRIVE;
+            node.m_type = ItemType::DRIVE;
         }
         else if (typeGUID == WPD_CONTENT_TYPE_FOLDER) {
-            node.m_type = FOLDER;
+            node.m_type = ItemType::FOLDER;
         }
         else {
-            node.m_type = FILE;
+            node.m_type = ItemType::FILE;
         }
     }
 
@@ -578,10 +616,10 @@ bool WPDManager::fetchData(const DeviceData &device, DeviceNode &node)
         str = nullptr;
     }
 
-    if (SUCCEEDED(hr) && node.m_type == FILE)
+    if (SUCCEEDED(hr) && node.m_type == ItemType::FILE)
         hr = objectProperties->GetUnsignedIntegerValue(WPD_OBJECT_SIZE, &node.m_size);
 
-    if (SUCCEEDED(hr) && node.m_type != DRIVE) {
+    if (SUCCEEDED(hr) && node.m_type != ItemType::DRIVE) {
 
         HRESULT hrOptional = objectProperties->GetStringValue(WPD_OBJECT_DATE_MODIFIED, &str);
         if (SUCCEEDED(hrOptional))
@@ -676,6 +714,9 @@ void WPDManager::removeDevice(const QString & deviceID)
         }
         endReading();
     }
+    else {
+        endWriting();
+    }
 }
 
 void WPDManager::addObject(const QString & deviceID, const QString &parentID, const QString& objectID)
@@ -695,7 +736,8 @@ void WPDManager::addObject(const QString & deviceID, const QString &parentID, co
             DeviceNode *parent = parentIter->second;
             if (parent) {
                 DeviceNode *node = createNode(*device, *parent, objectID);
-                path = findPath(*node);
+                if (m_objectsToWait > 0)
+                    m_objectsToWait--;
             }
         }
     }
@@ -717,8 +759,10 @@ void WPDManager::updateObject(const QString & deviceID, const QString& objectID)
 
     startWriting();
     auto &deviceIDIter = m_deviceIDMap.find(deviceID);
-    if (deviceIDIter == m_deviceIDMap.end())
+    if (deviceIDIter == m_deviceIDMap.end()) {
+        endWriting();
         return;
+    }
 
     QString deviceName = deviceIDIter->second;
     DeviceData *device = findDevice(deviceName);
@@ -756,8 +800,10 @@ void WPDManager::removeObject(const QString & deviceID, const QString& objectID)
 
     startWriting();
     auto &deviceIDIter = m_deviceIDMap.find(deviceID);
-    if (deviceIDIter == m_deviceIDMap.end())
+    if (deviceIDIter == m_deviceIDMap.end()) {
+        endWriting();
         return;
+    }
 
     QString deviceName = deviceIDIter->second;
     DeviceData *device = findDevice(deviceName);
@@ -769,8 +815,8 @@ void WPDManager::removeObject(const QString & deviceID, const QString& objectID)
                 device->m_objectIDMap.erase(objectIter);
                 if (node->m_parent)
                     node->m_parent->m_children.erase(node->m_name);
-
-                QString path = findPath(*node);
+                if (m_objectsToWait > 0)
+                    m_objectsToWait--;
                 delete node;
                 node = nullptr;
             }
@@ -804,8 +850,9 @@ void WPDManager::endReading()
 void WPDManager::startWriting()
 {
     m_mutex.lock();
-    while (m_readCount.loadRelaxed() > 0)
+    while (m_readCount.loadRelaxed() > 0) {
         m_readFinished.wait(&m_mutex, WPD_WAIT_TIMEOUT);
+    }
 }
 
 void WPDManager::endWriting()
@@ -814,9 +861,16 @@ void WPDManager::endWriting()
     m_mutex.unlock();
 }
 
-bool WPDManager::waitWriting()
+bool WPDManager::waitObjects()
 {
-    return m_writeFinished.wait(&m_mutex, WPD_WAIT_TIMEOUT);
+    bool timeout = false;
+    while (!timeout) {
+        if (m_objectsToWait == 0)
+            break;
+        timeout = !m_writeFinished.wait(&m_mutex, WPD_WAIT_TIMEOUT);
+    }
+
+    return !timeout;
 }
 
 WPDManager::DeviceNode::DeviceNode(DeviceNode *parent, const QString &objectID) :

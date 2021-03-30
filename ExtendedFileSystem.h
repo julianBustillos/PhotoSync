@@ -85,6 +85,9 @@ namespace ExtendedFileSystem /*ALIAS: EFS*/
         void close();
         bool remove();
 
+    public:
+        static int remove(const QVector<Path> &paths, QVector<bool>& results);
+
     private:
         const Path &m_path;
         void *m_fileImpl;

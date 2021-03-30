@@ -443,11 +443,11 @@ void MTPFileModel::cleanNodes()
 MTPFileNode::Type MTPFileModel::TypeConversion(WPDManager::ItemType type)
 {
     switch (type) {
-    case WPDManager::DRIVE:
+    case WPDManager::ItemType::DRIVE:
         return MTPFileNode::DRIVE;
-    case WPDManager::FOLDER:
+    case WPDManager::ItemType::FOLDER:
         return MTPFileNode::FOLDER;
-    case WPDManager::FILE:
+    case WPDManager::ItemType::FILE:
         return MTPFileNode::FILE;
     default:
         return MTPFileNode::UNKNOWN;
@@ -457,11 +457,11 @@ MTPFileNode::Type MTPFileModel::TypeConversion(WPDManager::ItemType type)
 QFileIconProvider::IconType MTPFileModel::IconConversion(WPDManager::ItemType type)
 {
     switch (type) {
-    case WPDManager::DRIVE:
+    case WPDManager::ItemType::DRIVE:
         return QFileIconProvider::Drive;
-    case WPDManager::FOLDER:
+    case WPDManager::ItemType::FOLDER:
         return QFileIconProvider::Folder;
-    case WPDManager::FILE:
+    case WPDManager::ItemType::FILE:
         return QFileIconProvider::File;
     default:
         return QFileIconProvider::File;

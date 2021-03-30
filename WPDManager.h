@@ -23,7 +23,7 @@ class WPDManager
     friend WPDDeviceEventsCallback;
 
 public:
-    enum ItemType {
+    enum class ItemType {
         DRIVE,
         FOLDER,
         FILE,
@@ -31,7 +31,7 @@ public:
     };
 
     struct Item {
-        Item(QString name = QString(), ItemType type = UNKNOWN, QString date = QString(), int size = 0);
+        Item(QString name = QString(), ItemType type = ItemType::UNKNOWN, QString date = QString(), int size = 0);
 
         QString m_name;
         ItemType m_type;
@@ -63,7 +63,7 @@ public:
     bool readData(const QString &path, char *data);
     bool createFolder(const QString &path, const QString &folderName);
     bool createFile(const QString &path, const QString &fileName, const char *data, int size);
-    bool deleteObject(const QString &path);
+    int deleteObjects(const QStringList& paths, QVector<bool>& results);
     bool registerForEvents(Observer *observer);
     bool unregisterForEvents(Observer *observer);
 
@@ -76,7 +76,7 @@ private:
         DeviceNode *m_parent;
         QString m_name;
         QString m_objectID;
-        ItemType m_type = UNKNOWN;
+        ItemType m_type = ItemType::UNKNOWN;
         QString m_date;
         ULONG m_size = 0;
         std::unordered_map<QString, DeviceNode *> m_children;
@@ -128,7 +128,7 @@ private:
     void endReading();
     void startWriting();
     void endWriting();
-    bool waitWriting();
+    bool waitObjects();
 
 
 private:
@@ -137,6 +137,7 @@ private:
     QAtomicInt m_readCount;
     QWaitCondition m_readFinished;
     QWaitCondition m_writeFinished;
+    int m_objectsToWait;
     // end protected by mutex
 
 private:

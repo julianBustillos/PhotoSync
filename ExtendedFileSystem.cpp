@@ -281,6 +281,39 @@ bool ExtendedFileSystem::File::remove()
     return false;
 }
 
+int ExtendedFileSystem::File::remove(const QVector<Path> &paths, QVector<bool>& results)
+{
+    results.resize(paths.size());
+
+    if (paths.isEmpty())
+        return 0;
+
+    Path::Type mainType = paths[0].m_type;
+    QStringList pathList;
+    for (int i = 0; i < paths.size(); i++) {
+        pathList.append(paths[i].m_path);
+        if (paths[i].m_type != mainType)
+            return 0;
+    }
+
+    if (mainType == Path::SYSTEM) {
+        int removeCount = 0;
+        for (int i = 0; i < pathList.size(); i++) {
+            if (QFile(pathList[i]).remove()) {
+                results[i] = true;
+                removeCount++;
+            }
+        }
+
+        return removeCount;
+    }
+    else if (mainType == Path::MTP) {
+        return MTPFS::File::remove(pathList, results);
+    }
+
+    return 0;
+}
+
 
 /* ExtendedFileSystem::Dir */
 ExtendedFileSystem::Dir::Dir(const Path & path) :

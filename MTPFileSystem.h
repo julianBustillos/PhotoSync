@@ -58,6 +58,9 @@ namespace MTPFileSystem /*ALIAS: MTPFS*/
         void close();
         bool remove();
 
+    public:
+        static int remove(const QStringList &pathList, QVector<bool> &results);
+
     private:
         QIODevice::OpenMode m_mode;
         const QString m_path;

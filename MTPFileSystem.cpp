@@ -46,7 +46,7 @@ void MTPFileSystem::DirIterator::findNext(const QString & current)
             }
         }
         for (++id; id < content.size() && searching; id++) {
-            if (content[id].m_type == WPDManager::FILE) {
+            if (content[id].m_type == WPDManager::ItemType::FILE) {
                 int pointId = content[id].m_name.lastIndexOf('.') + 1;
                 QStringRef currentExtRef(&content[id].m_name, pointId, content[id].m_name.size() - pointId);
 
@@ -149,11 +149,11 @@ bool MTPFileSystem::File::open(QIODevice::OpenMode mode)
 
     switch (m_mode) {
     case QIODevice::ReadOnly:
-        return WPDInstance::get().getItem(m_path, item) && (item.m_type == WPDManager::FILE) && (m_size = item.m_size);
+        return WPDInstance::get().getItem(m_path, item) && (item.m_type == WPDManager::ItemType::FILE) && (m_size = item.m_size);
     case QIODevice::WriteOnly:
         int index = m_path.lastIndexOf("/");
         if (index > 0)
-            return WPDInstance::get().getItem(m_path.left(index), item) && (item.m_type != WPDManager::FILE) &&!WPDInstance::get().getItem(m_path, item);
+            return WPDInstance::get().getItem(m_path.left(index), item) && (item.m_type != WPDManager::ItemType::FILE) &&!WPDInstance::get().getItem(m_path, item);
     }
 
     m_mode = QIODevice::NotOpen;
@@ -189,9 +189,17 @@ void MTPFileSystem::File::close()
 bool MTPFileSystem::File::remove()
 {
     if (m_mode == QIODevice::NotOpen) {
-        return WPDInstance::get().deleteObject(m_path);
+        QStringList path;
+        QVector<bool> result;
+        path.append(m_path);
+        return WPDInstance::get().deleteObjects(path, result);
     }
     return false;
+}
+
+int MTPFileSystem::File::remove(const QStringList& pathList, QVector<bool>& results)
+{
+    return WPDInstance::get().deleteObjects(pathList, results);
 }
 
 /* MTPFileSystem::Dir */

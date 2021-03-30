@@ -42,6 +42,7 @@ private:
     void buildExistingFileData();
     void buildImportFileData();
     void exportFiles();
+    void removeFiles();
     void printStats();
     void printElapsedTime(std::chrono::steady_clock::time_point start, std::chrono::steady_clock::time_point end);
 
@@ -57,9 +58,12 @@ private:
     const QStringList m_extensions;
     int m_runCount;
     int m_progress;
+    int m_copyProgress;
+    int m_removeProgress;
     std::unordered_map<qint64, std::vector<ExistingFile>> m_existingFiles;
     std::set<Date> m_DirectoriesToCreate;
     std::vector<ExportFile> m_filesToCopy;
+    std::vector<EFS::Path> m_filesToRemove;
     std::set<EFS::Path> m_importErrors;
     std::set<EFS::Path> m_exportErrors;
     int m_duplicateCount;

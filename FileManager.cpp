@@ -62,6 +62,7 @@ void FileManager::run()
         buildExistingFileData();
         buildImportFileData();
         exportFiles();
+        removeFiles();
         printStats();
 
         m_importErrors.clear();
@@ -69,6 +70,7 @@ void FileManager::run()
         m_existingFiles.clear();
         m_DirectoriesToCreate.clear();
         m_filesToCopy.clear();
+        m_filesToRemove.clear();
 
         std::chrono::steady_clock::time_point endTime = std::chrono::steady_clock::now();
         printElapsedTime(startTime, endTime);
@@ -151,12 +153,25 @@ void FileManager::buildImportFileData()
 {
     EFS::DirIterator it(m_importPath, m_extensions);
     QVector<EFS::Path> importFilePaths;
-    QVector<EFS::Path> filesToRemove;
 
     while (it.hasNext())
         importFilePaths.append(it.next());
 
-    size_t progressSize = importFilePaths.size();
+    int progressSize;
+    if (m_removeFiles) {
+        progressSize = importFilePaths.size() * 10;
+        m_copyProgress = 9;
+        m_removeProgress = 1;
+    }
+    else {
+        progressSize = importFilePaths.size();
+        m_copyProgress = 1;
+        m_removeProgress = 0;
+    }
+    
+    m_copyProgress = m_removeFiles ? 9 : 1;
+    m_removeProgress = m_removeFiles ? 1 : 0;
+
     if (progressSize == 0)
         emit progressBarValue(m_progress = 100);
     else
@@ -175,6 +190,7 @@ void FileManager::buildImportFileData()
             EFS::File newFile(fileInfo.path());
             if (!newFile.open(QIODevice::ReadOnly)) {
                 m_importErrors.insert(fileInfo.path());
+                emit progressBarValue(m_progress = m_progress + m_copyProgress + m_removeProgress);
                 continue;
             }
             hash.addData(newFile.readAll());
@@ -198,36 +214,25 @@ void FileManager::buildImportFileData()
                 if (newFileChecksum == fileData.m_checksum) {
                     copyFile = false;
                     m_duplicateCount++;
-                    emit progressBarValue(++m_progress);
-                    if (!m_removeFiles)
-                        emit progressBarValue(++m_progress);
                     break;
                 }
             }
         }
 
+        emit progressBarValue(m_progress = m_progress + m_copyProgress);
+
         if (copyFile) {
             Date date;
             if (!getDate(fileInfo, date)) {
                 m_importErrors.insert(fileInfo.path());
-                emit progressBarValue(++m_progress);
                 continue;
             }
             m_DirectoriesToCreate.insert(date);
             m_filesToCopy.emplace_back(date, fileInfo.path());
         }
         else if (m_removeFiles) {
-            filesToRemove.append(filePath);
+            m_filesToRemove.push_back(filePath);
         }
-    }
-
-    for (EFS::Path &path : filesToRemove) {
-        EFS::File file(path);
-        if (file.remove())
-            m_removeCount++;
-        else
-            m_importErrors.insert(path);
-        emit progressBarValue(++m_progress);
     }
 }
 
@@ -249,7 +254,6 @@ void FileManager::exportFiles()
         
         int count = 0;
         bool copy = false;
-        bool remove = false;
 
         if (exportFileInfo.exists()) {
             int index = fileName.lastIndexOf(".");
@@ -271,21 +275,36 @@ void FileManager::exportFiles()
             exportFile.close();
 
             if (copy && m_removeFiles)
-                remove = importFile.remove();
+                m_filesToRemove.push_back(importFileInfo.path());
         }
 
         if (copy)
             m_copyCount++;
-
-        if (remove)
-            m_removeCount++;
-
-        if (!copy || (m_removeFiles && !remove))
+        else
             m_importErrors.insert(importFileInfo.path());
 
-        emit progressBarValue(++m_progress);
+        emit progressBarValue(m_progress = m_progress + m_copyProgress);
     }
 
+}
+
+void FileManager::removeFiles()
+{
+    QVector<EFS::Path> paths;
+    QVector<bool> results;
+
+    for (EFS::Path& path : m_filesToRemove)
+        paths.append(path);
+
+    EFS::File::remove(paths, results);
+    for (int i = 0; i < results.size(); i++) {
+        if (results[i])
+            m_removeCount++;
+        else
+            m_importErrors.insert(paths[i]);
+
+        emit progressBarValue(m_progress = m_progress + m_removeProgress);
+    }
 }
 
 void FileManager::printStats()
