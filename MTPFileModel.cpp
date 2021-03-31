@@ -264,7 +264,7 @@ void MTPFileModel::updateDevices(const QStringList &devices)
         beginInsertRows(index, firstRow, firstRow + newDevices.size() - 1);
         for (int id : newDevices) {
             const QString &newDevice = devices[id];
-            MTPFileNode *child = new MTPFileNode(newDevice, MTPFileNode::DEVICE, 0, QString(), m_iconProvider.icon(QFileIconProvider::Computer), m_root);
+            MTPFileNode *child = new MTPFileNode(newDevice, MTPFileNode::Type::DEVICE, 0, QString(), m_iconProvider.icon(QFileIconProvider::Computer), m_root);
             if (child) {
                 m_root->getChildren().insert(MTPFileNodePathKey(newDevice), child);
                 m_root->getVisibleChildren().append(newDevice);
@@ -444,13 +444,13 @@ MTPFileNode::Type MTPFileModel::TypeConversion(WPDManager::ItemType type)
 {
     switch (type) {
     case WPDManager::ItemType::DRIVE:
-        return MTPFileNode::DRIVE;
+        return MTPFileNode::Type::DRIVE;
     case WPDManager::ItemType::FOLDER:
-        return MTPFileNode::FOLDER;
+        return MTPFileNode::Type::FOLDER;
     case WPDManager::ItemType::FILE:
-        return MTPFileNode::FILE;
+        return MTPFileNode::Type::FILE;
     default:
-        return MTPFileNode::UNKNOWN;
+        return MTPFileNode::Type::UNKNOWN;
     }
 }
 

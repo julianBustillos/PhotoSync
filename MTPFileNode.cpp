@@ -3,7 +3,7 @@
 MTPFileNode::MTPFileNode(const QString &name, Type type, qint64 size, QString lastModified, const QIcon &icon, MTPFileNode *parent) :
     m_name(name), m_type(type), m_size(size), m_lastModified(lastModified), m_icon(icon), m_parent(parent)
 {
-    m_step = (type == FILE) ? POPULATED : EMPTY;
+    m_step = (type == Type::FILE) ? Step::POPULATED : Step::EMPTY;
 }
 
 MTPFileNode::~MTPFileNode()
@@ -21,13 +21,13 @@ QString MTPFileNode::getPath() const
 QString MTPFileNode::TypeToString(Type type)
 {
     switch (type) {
-    case DEVICE:
+    case Type::DEVICE:
         return "Device";
-    case DRIVE:
+    case Type::DRIVE:
         return "Drive";
-    case FOLDER:
+    case Type::FOLDER:
         return "Folder";
-    case FILE:
+    case Type::FILE:
         return "File";
     default:
         return "ERROR_TYPE";

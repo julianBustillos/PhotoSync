@@ -24,7 +24,7 @@ namespace ExtendedFileSystem /*ALIAS: EFS*/
         bool operator<(const Path& rhs) const;
 
     private:
-        enum Type {
+        enum class Type {
             SYSTEM,
             MTP,
             INVALID

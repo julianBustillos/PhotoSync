@@ -2,9 +2,12 @@
 #include <QCryptographicHash>
 #include "DateParser.h"
 
+#define MAX_NAME_INDEX 100
+
 
 FileManager::FileManager(QObject *parent) :
-    QThread(parent), m_importPath(""), m_exportPath(""), m_extensions({ "*.jpg" , "*.mp4" }), m_runCount(0), m_cancelled(false), m_status(false)
+    QThread(parent), m_importPath(""), m_exportPath(""), m_extensions({ "*.jpg" , "*.mp4" }), m_cancelled(false), m_status(false), m_removeFiles(false),
+    m_runCount(0), m_progress(0), m_copyProgress(0), m_removeProgress(0), m_duplicateCount(0), m_copyCount(0), m_removeCount(0)
 {
 }
 
@@ -259,12 +262,12 @@ void FileManager::exportFiles()
             int index = fileName.lastIndexOf(".");
             QString name = fileName.left(index);
             QString extension = fileName.right(fileName.size() - index);
-            while (exportFileInfo.exists() && count < 100) {
+            while (exportFileInfo.exists() && count < MAX_NAME_INDEX) {
                 exportFileInfo.setFile(name + "_" + QString::number(++count) + extension);
             }
         }
 
-        if (count < 100) {
+        if (count < MAX_NAME_INDEX) {
             EFS::File importFile(importFileInfo.path());
             EFS::File exportFile(exportFileInfo.path());
 

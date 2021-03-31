@@ -10,7 +10,7 @@
 
 /* ExtendedFileSystem::Path */
 ExtendedFileSystem::Path::Path(const QString & path) :
-    m_path(path), m_type(INVALID)
+    m_path(path), m_type(Type::INVALID)
 {
     if (!m_path.isEmpty()) {
         m_path.replace('\\', '/');
@@ -18,13 +18,13 @@ ExtendedFileSystem::Path::Path(const QString & path) :
             m_path = m_path.left(m_path.size() - 1);
         QStringList splittedPath = m_path.split('/');
         if (QDir(splittedPath[0]).exists())
-            m_type = SYSTEM;
+            m_type = Type::SYSTEM;
         else {
             QStringList devices;
             WPDInstance::get().getDevices(devices);
             for (const QString &device : devices) {
                 if (device == splittedPath[0]) {
-                    m_type = MTP;
+                    m_type = Type::MTP;
                     break;
                 }
             }
@@ -56,10 +56,10 @@ bool ExtendedFileSystem::Path::operator<(const Path & rhs) const
 ExtendedFileSystem::DirIterator::DirIterator(const Path & path, const QStringList & extensions) :
     m_path(path), m_iteratorImpl(nullptr)
 {
-    if (m_path.m_type == Path::SYSTEM) {
+    if (m_path.m_type == Path::Type::SYSTEM) {
         m_iteratorImpl = new QDirIterator(path.toQString(), extensions, QDir::Files, QDirIterator::Subdirectories);
     }
-    else if (m_path.m_type == Path::MTP) {
+    else if (m_path.m_type == Path::Type::MTP) {
         m_iteratorImpl = new MTPFS::DirIterator(path.toQString(), extensions);
     }
 }
@@ -75,10 +75,10 @@ ExtendedFileSystem::DirIterator::~DirIterator()
 bool ExtendedFileSystem::DirIterator::hasNext() const
 {
     if (m_iteratorImpl) {
-        if (m_path.m_type == Path::SYSTEM) {
+        if (m_path.m_type == Path::Type::SYSTEM) {
             return static_cast<QDirIterator *>(m_iteratorImpl)->hasNext();
         }
-        else if (m_path.m_type == Path::MTP) {
+        else if (m_path.m_type == Path::Type::MTP) {
             return static_cast<MTPFS::DirIterator *>(m_iteratorImpl)->hasNext();
         }
     }
@@ -88,10 +88,10 @@ bool ExtendedFileSystem::DirIterator::hasNext() const
 ExtendedFileSystem::Path ExtendedFileSystem::DirIterator::next()
 {
     if (m_iteratorImpl) {
-        if (m_path.m_type == Path::SYSTEM) {
+        if (m_path.m_type == Path::Type::SYSTEM) {
             return Path(static_cast<QDirIterator *>(m_iteratorImpl)->next());
         }
-        else if (m_path.m_type == Path::MTP) {
+        else if (m_path.m_type == Path::Type::MTP) {
             return Path(static_cast<MTPFS::DirIterator *>(m_iteratorImpl)->next());
         }
     }
@@ -103,10 +103,10 @@ ExtendedFileSystem::Path ExtendedFileSystem::DirIterator::next()
 ExtendedFileSystem::FileInfo::FileInfo(const Path & path) :
     m_path(path), m_infoImpl(nullptr)
 {
-    if (m_path.m_type == Path::SYSTEM) {
+    if (m_path.m_type == Path::Type::SYSTEM) {
         m_infoImpl = new QFileInfo(path.toQString());
     }
-    else if (m_path.m_type == Path::MTP) {
+    else if (m_path.m_type == Path::Type::MTP) {
         m_infoImpl = new MTPFS::FileInfo(path.toQString());
     }
 }
@@ -121,10 +121,10 @@ ExtendedFileSystem::FileInfo::~FileInfo()
 ExtendedFileSystem::Path ExtendedFileSystem::FileInfo::path() const
 {
     if (m_infoImpl) {
-        if (m_path.m_type == Path::SYSTEM) {
+        if (m_path.m_type == Path::Type::SYSTEM) {
             return Path(static_cast<QFileInfo *>(m_infoImpl)->absoluteFilePath());
         }
-        else if (m_path.m_type == Path::MTP) {
+        else if (m_path.m_type == Path::Type::MTP) {
             return static_cast<MTPFS::FileInfo *>(m_infoImpl)->path();
         }
     }
@@ -135,10 +135,10 @@ QString ExtendedFileSystem::FileInfo::fileName() const
 {
     if (m_infoImpl) {
         if (m_infoImpl) {
-            if (m_path.m_type == Path::SYSTEM) {
+            if (m_path.m_type == Path::Type::SYSTEM) {
                 return static_cast<QFileInfo *>(m_infoImpl)->fileName();
             }
-            else if (m_path.m_type == Path::MTP) {
+            else if (m_path.m_type == Path::Type::MTP) {
                 return static_cast<MTPFS::FileInfo *>(m_infoImpl)->fileName();
             }
         }
@@ -149,10 +149,10 @@ QString ExtendedFileSystem::FileInfo::fileName() const
 void ExtendedFileSystem::FileInfo::setFile(const QString &name)
 {
     if (m_infoImpl) {
-        if (m_path.m_type == Path::SYSTEM) {
+        if (m_path.m_type == Path::Type::SYSTEM) {
             static_cast<QFileInfo *>(m_infoImpl)->setFile(name);
         }
-        else if (m_path.m_type == Path::MTP) {
+        else if (m_path.m_type == Path::Type::MTP) {
             static_cast<MTPFS::FileInfo *>(m_infoImpl)->setFile(name);
         }
     }
@@ -161,10 +161,10 @@ void ExtendedFileSystem::FileInfo::setFile(const QString &name)
 QString ExtendedFileSystem::FileInfo::suffix() const
 {
     if (m_infoImpl) {
-        if (m_path.m_type == Path::SYSTEM) {
+        if (m_path.m_type == Path::Type::SYSTEM) {
             return static_cast<QFileInfo *>(m_infoImpl)->suffix();
         }
-        else if (m_path.m_type == Path::MTP) {
+        else if (m_path.m_type == Path::Type::MTP) {
             return static_cast<MTPFS::FileInfo *>(m_infoImpl)->suffix();
         }
     }
@@ -174,10 +174,10 @@ QString ExtendedFileSystem::FileInfo::suffix() const
 int ExtendedFileSystem::FileInfo::size() const
 {
     if (m_infoImpl) {
-        if (m_path.m_type == Path::SYSTEM) {
+        if (m_path.m_type == Path::Type::SYSTEM) {
             return static_cast<QFileInfo *>(m_infoImpl)->size();
         }
-        else if (m_path.m_type == Path::MTP) {
+        else if (m_path.m_type == Path::Type::MTP) {
             return static_cast<MTPFS::FileInfo *>(m_infoImpl)->size();
         }
     }
@@ -187,10 +187,10 @@ int ExtendedFileSystem::FileInfo::size() const
 bool ExtendedFileSystem::FileInfo::exists() const
 {
     if (m_infoImpl) {
-        if (m_path.m_type == Path::SYSTEM) {
+        if (m_path.m_type == Path::Type::SYSTEM) {
             return static_cast<QFileInfo *>(m_infoImpl)->exists();
         }
-        else if (m_path.m_type == Path::MTP) {
+        else if (m_path.m_type == Path::Type::MTP) {
             return static_cast<MTPFS::FileInfo *>(m_infoImpl)->exists();
         }
     }
@@ -202,10 +202,10 @@ bool ExtendedFileSystem::FileInfo::exists() const
 ExtendedFileSystem::File::File(const Path & path) :
     m_path(path), m_fileImpl(nullptr)
 {
-    if (m_path.m_type == Path::SYSTEM) {
+    if (m_path.m_type == Path::Type::SYSTEM) {
         m_fileImpl = new QFile(path.toQString());
     }
-    else if (m_path.m_type == Path::MTP) {
+    else if (m_path.m_type == Path::Type::MTP) {
         m_fileImpl = new MTPFS::File(path.toQString());
     }
 }
@@ -220,10 +220,10 @@ ExtendedFileSystem::File::~File()
 bool ExtendedFileSystem::File::open(QIODevice::OpenMode mode)
 {
     if (m_fileImpl) {
-        if (m_path.m_type == Path::SYSTEM) {
+        if (m_path.m_type == Path::Type::SYSTEM) {
             return static_cast<QFile *>(m_fileImpl)->open(mode);
         }
-        else if (m_path.m_type == Path::MTP) {
+        else if (m_path.m_type == Path::Type::MTP) {
             return static_cast<MTPFS::File *>(m_fileImpl)->open(mode);
         }
     }
@@ -233,10 +233,10 @@ bool ExtendedFileSystem::File::open(QIODevice::OpenMode mode)
 qint64 ExtendedFileSystem::File::write(const QByteArray &byteArray)
 {
     if (m_fileImpl) {
-        if (m_path.m_type == Path::SYSTEM) {
+        if (m_path.m_type == Path::Type::SYSTEM) {
             return static_cast<QFile *>(m_fileImpl)->write(byteArray);
         }
-        else if (m_path.m_type == Path::MTP) {
+        else if (m_path.m_type == Path::Type::MTP) {
             return static_cast<MTPFS::File *>(m_fileImpl)->write(byteArray);
         }
     }
@@ -246,10 +246,10 @@ qint64 ExtendedFileSystem::File::write(const QByteArray &byteArray)
 QByteArray ExtendedFileSystem::File::readAll()
 {
     if (m_fileImpl) {
-        if (m_path.m_type == Path::SYSTEM) {
+        if (m_path.m_type == Path::Type::SYSTEM) {
             return static_cast<QFile *>(m_fileImpl)->readAll();
         }
-        else if (m_path.m_type == Path::MTP) {
+        else if (m_path.m_type == Path::Type::MTP) {
             return static_cast<MTPFS::File *>(m_fileImpl)->readAll();
         }
     }
@@ -259,10 +259,10 @@ QByteArray ExtendedFileSystem::File::readAll()
 void ExtendedFileSystem::File::close()
 {
     if (m_fileImpl) {
-        if (m_path.m_type == Path::SYSTEM) {
+        if (m_path.m_type == Path::Type::SYSTEM) {
             static_cast<QFile *>(m_fileImpl)->close();
         }
-        else if (m_path.m_type == Path::MTP) {
+        else if (m_path.m_type == Path::Type::MTP) {
             static_cast<MTPFS::File *>(m_fileImpl)->close();
         }
     }
@@ -271,10 +271,10 @@ void ExtendedFileSystem::File::close()
 bool ExtendedFileSystem::File::remove()
 {
     if (m_fileImpl) {
-        if (m_path.m_type == Path::SYSTEM) {
+        if (m_path.m_type == Path::Type::SYSTEM) {
             return static_cast<QFile *>(m_fileImpl)->remove();
         }
-        else if (m_path.m_type == Path::MTP) {
+        else if (m_path.m_type == Path::Type::MTP) {
             return static_cast<MTPFS::File *>(m_fileImpl)->remove();
         }
     }
@@ -296,7 +296,7 @@ int ExtendedFileSystem::File::remove(const QVector<Path> &paths, QVector<bool>& 
             return 0;
     }
 
-    if (mainType == Path::SYSTEM) {
+    if (mainType == Path::Type::SYSTEM) {
         int removeCount = 0;
         for (int i = 0; i < pathList.size(); i++) {
             if (QFile(pathList[i]).remove()) {
@@ -307,7 +307,7 @@ int ExtendedFileSystem::File::remove(const QVector<Path> &paths, QVector<bool>& 
 
         return removeCount;
     }
-    else if (mainType == Path::MTP) {
+    else if (mainType == Path::Type::MTP) {
         return MTPFS::File::remove(pathList, results);
     }
 
@@ -319,10 +319,10 @@ int ExtendedFileSystem::File::remove(const QVector<Path> &paths, QVector<bool>& 
 ExtendedFileSystem::Dir::Dir(const Path & path) :
     m_path(path), m_dirImpl(nullptr)
 {
-    if (m_path.m_type == Path::SYSTEM) {
+    if (m_path.m_type == Path::Type::SYSTEM) {
         m_dirImpl = new QDir(path.toQString());
     }
-    else if (m_path.m_type == Path::MTP) {
+    else if (m_path.m_type == Path::Type::MTP) {
         m_dirImpl = new MTPFS::Dir(path.toQString());
     }
 }
@@ -337,10 +337,10 @@ ExtendedFileSystem::Dir::~Dir()
 ExtendedFileSystem::Path ExtendedFileSystem::Dir::path(const QString &concatenate) const
 {
     if (m_dirImpl) {
-        if (m_path.m_type == Path::SYSTEM) {
+        if (m_path.m_type == Path::Type::SYSTEM) {
             return static_cast<QDir *>(m_dirImpl)->absoluteFilePath(concatenate);
         }
-        else if (m_path.m_type == Path::MTP) {
+        else if (m_path.m_type == Path::Type::MTP) {
             return static_cast<MTPFS::Dir *>(m_dirImpl)->path(concatenate);
         }
     }
@@ -350,10 +350,10 @@ ExtendedFileSystem::Path ExtendedFileSystem::Dir::path(const QString &concatenat
 bool ExtendedFileSystem::Dir::exists() const
 {
     if (m_dirImpl) {
-        if (m_path.m_type == Path::SYSTEM) {
+        if (m_path.m_type == Path::Type::SYSTEM) {
             return static_cast<QDir *>(m_dirImpl)->exists();
         }
-        else if (m_path.m_type == Path::MTP) {
+        else if (m_path.m_type == Path::Type::MTP) {
             return static_cast<MTPFS::Dir *>(m_dirImpl)->exists();
         }
     }
@@ -363,10 +363,10 @@ bool ExtendedFileSystem::Dir::exists() const
 bool ExtendedFileSystem::Dir::mkpath(const QString & dirPath) const
 {
     if (m_dirImpl) {
-        if (m_path.m_type == Path::SYSTEM) {
+        if (m_path.m_type == Path::Type::SYSTEM) {
             return static_cast<QDir *>(m_dirImpl)->mkpath(dirPath);
         }
-        else if (m_path.m_type == Path::MTP) {
+        else if (m_path.m_type == Path::Type::MTP) {
             return static_cast<MTPFS::Dir *>(m_dirImpl)->mkpath(dirPath);
         }
     }

@@ -7,7 +7,7 @@
 class MTPFileNode
 {
 public:
-    enum Type {
+    enum class Type {
         DEVICE,
         DRIVE,
         FOLDER,
@@ -18,7 +18,7 @@ public:
 public:
     Q_DISABLE_COPY_MOVE(MTPFileNode)
 
-    MTPFileNode(const QString &name = "root", Type type = UNKNOWN, qint64 size = 0, QString lastModified = "", const QIcon &icon = QIcon(), MTPFileNode *parent = nullptr);
+    MTPFileNode(const QString &name = "root", Type type = Type::UNKNOWN, qint64 size = 0, QString lastModified = "", const QIcon &icon = QIcon(), MTPFileNode *parent = nullptr);
     ~MTPFileNode();
 
 public:
@@ -40,7 +40,7 @@ public:
     QString getPath() const;
 
 private:
-    enum Step {
+    enum class Step {
         EMPTY = 0,
         UPDATE = 1,
         FETCHING = 2,
@@ -108,31 +108,31 @@ inline QList<QString>& MTPFileNode::getVisibleChildren()
 }
 inline bool MTPFileNode::isDir()
 {
-    return m_type == DEVICE || m_type == DRIVE || m_type== FOLDER;
+    return m_type == Type::DEVICE || m_type == Type::DRIVE || m_type== Type::FOLDER;
 }
 inline bool MTPFileNode::isFetching()
 {
-    return m_step >= FETCHING;
+    return m_step >= Step::FETCHING;
 }
 
 inline bool MTPFileNode::isPopulated()
 {
-    return m_step >= POPULATED;
+    return m_step >= Step::POPULATED;
 }
 
 inline void MTPFileNode::setUpdate()
 {
-    m_step = UPDATE;
+    m_step = Step::UPDATE;
 }
 
 inline void MTPFileNode::setFetching()
 {
-    if (m_step < FETCHING)
-        m_step = FETCHING;
+    if (m_step < Step::FETCHING)
+        m_step = Step::FETCHING;
 }
 
 inline void MTPFileNode::setPopulated()
 {
-    if (m_step < POPULATED)
-        m_step = POPULATED;
+    if (m_step < Step::POPULATED)
+        m_step = Step::POPULATED;
 }
