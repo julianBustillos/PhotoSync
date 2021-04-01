@@ -44,7 +44,8 @@ void FileManager::cancel()
 void FileManager::run()
 {
     m_cancelled.storeRelaxed(false);
-    emit progressBarValue(m_progress = 0);
+    m_progress = 0;
+    addToProgress(0);
     emit progressBarMaximum(100);
 
     m_status = checkDir() && checkRemove();
@@ -172,11 +173,8 @@ void FileManager::buildImportFileData()
         m_removeProgress = 0;
     }
     
-    m_copyProgress = m_removeFiles ? 9 : 1;
-    m_removeProgress = m_removeFiles ? 1 : 0;
-
     if (progressSize == 0)
-        emit progressBarValue(m_progress = 100);
+        addToProgress(100);
     else
         emit progressBarMaximum(progressSize);
 
@@ -193,7 +191,7 @@ void FileManager::buildImportFileData()
             EFS::File newFile(fileInfo.path());
             if (!newFile.open(QIODevice::ReadOnly)) {
                 m_importErrors.insert(fileInfo.path());
-                emit progressBarValue(m_progress = m_progress + m_copyProgress + m_removeProgress);
+                addToProgress(m_copyProgress + m_removeProgress);
                 continue;
             }
             hash.addData(newFile.readAll());
@@ -222,20 +220,22 @@ void FileManager::buildImportFileData()
             }
         }
 
-        emit progressBarValue(m_progress = m_progress + m_copyProgress);
-
         if (copyFile) {
             Date date;
             if (!getDate(fileInfo, date)) {
                 m_importErrors.insert(fileInfo.path());
+                addToProgress(m_copyProgress + m_removeProgress);
                 continue;
             }
             m_DirectoriesToCreate.insert(date);
             m_filesToCopy.emplace_back(date, fileInfo.path());
         }
-        else if (m_removeFiles) {
-            m_filesToRemove.push_back(filePath);
+        else {
+            if (m_removeFiles)
+                m_filesToRemove.push_back(filePath);
+            addToProgress(m_copyProgress);
         }
+
     }
 }
 
@@ -276,17 +276,19 @@ void FileManager::exportFiles()
 
             importFile.close();
             exportFile.close();
-
-            if (copy && m_removeFiles)
-                m_filesToRemove.push_back(importFileInfo.path());
         }
 
-        if (copy)
+        if (copy) {
             m_copyCount++;
-        else
+            if (m_removeFiles)
+                m_filesToRemove.push_back(importFileInfo.path());
+            addToProgress(m_copyProgress);
+        }
+        else {
             m_importErrors.insert(importFileInfo.path());
+            addToProgress(m_copyProgress + m_removeProgress);
+        }
 
-        emit progressBarValue(m_progress = m_progress + m_copyProgress);
     }
 
 }
@@ -306,7 +308,7 @@ void FileManager::removeFiles()
         else
             m_importErrors.insert(paths[i]);
 
-        emit progressBarValue(m_progress = m_progress + m_removeProgress);
+        addToProgress(m_removeProgress);
     }
 }
 
@@ -353,4 +355,9 @@ void FileManager::printElapsedTime(std::chrono::steady_clock::time_point start, 
 
     QString timeToPrint = QString::number(h).rightJustified(2, '0') + ":" + QString::number(m).rightJustified(2, '0') + ":" + QString::number(s).rightJustified(2, '0');
     emit output("Elapsed time : " + timeToPrint);
+}
+
+void FileManager::addToProgress(int val)
+{
+    emit progressBarValue(m_progress = m_progress + val);
 }

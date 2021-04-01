@@ -45,6 +45,7 @@ private:
     void removeFiles();
     void printStats();
     void printElapsedTime(std::chrono::steady_clock::time_point start, std::chrono::steady_clock::time_point end);
+    void addToProgress(int val);
 
 private:
     QMutex m_mutex;
