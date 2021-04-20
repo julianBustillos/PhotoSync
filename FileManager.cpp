@@ -6,7 +6,7 @@
 
 
 FileManager::FileManager(QObject *parent) :
-    QThread(parent), m_importPath(""), m_exportPath(""), m_extensions({ "*.jpg" , "*.mp4" }), m_cancelled(false), m_status(false), m_removeFiles(false),
+    QThread(parent), m_importPath(""), m_exportPath(""), m_extensions({ "*.jpg" , "*.jpeg", "*.mp4" }), m_cancelled(false), m_status(false), m_removeFiles(false),
     m_runCount(0), m_progress(0), m_copyProgress(0), m_removeProgress(0), m_duplicateCount(0), m_copyCount(0), m_removeCount(0)
 {
 }
@@ -121,7 +121,8 @@ bool FileManager::getDate(const EFS::FileInfo &fileInfo, Date &date)
 {
     bool isParsed = false;
 
-    if (fileInfo.suffix().compare("jpg", Qt::CaseInsensitive) == 0) {
+    if (fileInfo.suffix().compare("jpg", Qt::CaseInsensitive) == 0 
+        || fileInfo.suffix().compare("jpeg", Qt::CaseInsensitive) == 0) {
         EFS::File file(fileInfo.path());
         if (file.open(QIODevice::ReadOnly)) {
             DateParser::fromJPGBuffer(file.readAll(), date);
