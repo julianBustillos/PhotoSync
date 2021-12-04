@@ -14,6 +14,7 @@ bool DateParser::fromJPGBuffer(const QByteArray & buffer, Date & date)
     easyexif::EXIFInfo exifInfo;
     int parsingResult = exifInfo.parseFrom((const unsigned char *)buffer.constData(), buffer.size());
     if (parsingResult == PARSE_EXIF_SUCCESS) {
+    if (parsingResult == PARSE_EXIF_SUCCESS && exifInfo.DateTime.size() >= 7) {
         date.m_year = std::stoi(exifInfo.DateTime.substr(0, 4));
         date.m_month = std::stoi(exifInfo.DateTime.substr(5, 2));
         dateFound = true;
