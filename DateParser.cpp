@@ -96,3 +96,50 @@ bool DateParser::fromMP4Buffer(const QByteArray & buffer, Date & date)
 
     return dateFound;
 }
+
+bool DateParser::fromFileName(const std::string& fileName, Date& date)
+{
+    bool dateFound = false;
+    size_t start = 0, size = 0;
+    bool checkingNumber = false;
+
+    for (size_t i = 0; i <= fileName.size() && !dateFound; i++) {
+        if (i < fileName.size() && std::isdigit(fileName[i])) {
+            if (!checkingNumber) {
+                start = i;
+                checkingNumber = true;
+            }
+            size++;
+        }
+        else {
+            if (size == 8) {
+                int year = std::stoi(fileName.substr(start, 4));
+                int month = std::stoi(fileName.substr(start + 4, 2));
+                int day = std::stoi(fileName.substr(start + 6, 2));
+
+                if (2000 <= year 
+                    && 1 <= month && month <= 12 
+                    && 1 <= day && day <= 31) {
+                    time_t now = time(0);
+                    struct tm  tstruct;
+                    tstruct = *localtime(&now);
+
+                    int currYear = 1900 + tstruct.tm_year;
+                    int currMonth = 1 + tstruct.tm_mon;
+                    int currDay = tstruct.tm_mday;
+
+                    if (year < currYear || (year == currYear && (month < currMonth || (month == currMonth && day <= currDay)))) {
+                        date.m_year = year;
+                        date.m_month = month;
+                        dateFound = true;
+                    }
+                }
+            }
+
+            checkingNumber = false;
+            start = size = 0;
+        }
+    }
+
+    return dateFound;
+}

@@ -120,12 +120,13 @@ bool FileManager::checkRemove()
 bool FileManager::getDate(const EFS::FileInfo &fileInfo, Date &date)
 {
     bool isParsed = false;
+    bool tryFileName = false;
 
     if (fileInfo.suffix().compare("jpg", Qt::CaseInsensitive) == 0 
         || fileInfo.suffix().compare("jpeg", Qt::CaseInsensitive) == 0) {
         EFS::File file(fileInfo.path());
         if (file.open(QIODevice::ReadOnly)) {
-            DateParser::fromJPGBuffer(file.readAll(), date);
+            tryFileName = !DateParser::fromJPGBuffer(file.readAll(), date);
             file.close();
             isParsed = true;
         }
@@ -133,10 +134,14 @@ bool FileManager::getDate(const EFS::FileInfo &fileInfo, Date &date)
     else if (fileInfo.suffix().compare("mp4", Qt::CaseInsensitive) == 0) {
         EFS::File file(fileInfo.path());
         if (file.open(QIODevice::ReadOnly)) {
-            DateParser::fromMP4Buffer(file.readAll(), date);
+            tryFileName = !DateParser::fromMP4Buffer(file.readAll(), date);
             file.close();
             isParsed = true;
         }
+    }
+
+    if (tryFileName) {
+        DateParser::fromFileName(fileInfo.fileName().toStdString(), date);
     }
 
     return isParsed;
