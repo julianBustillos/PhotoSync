@@ -1,4 +1,5 @@
 #include "PhotoSync.h"
+#include "WPDInstance.h"
 #include <QMessageBox>
 
 
@@ -52,6 +53,8 @@ PhotoSync::~PhotoSync()
     if (m_settings)
         delete m_settings;
     m_settings = nullptr;
+
+    WPDInstance::free();
 }
 
 void PhotoSync::askImportFolder()
