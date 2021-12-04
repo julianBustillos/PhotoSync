@@ -80,9 +80,11 @@ bool DateParser::fromMP4Buffer(const QByteArray & buffer, Date & date)
         tag = av_dict_get(fmt_ctx->metadata, "creation_time", tag, AV_DICT_IGNORE_SUFFIX);
         if (tag) {
             std::string value = tag->value;
-            date.m_year = std::stoi(value.substr(0, 4));
-            date.m_month = std::stoi(value.substr(5, 2));
-            dateFound = true;
+            if (value.size() >= 7) {
+                date.m_year = std::stoi(value.substr(0, 4));
+                date.m_month = std::stoi(value.substr(5, 2));
+                dateFound = true;
+            }
         }
     }
 
