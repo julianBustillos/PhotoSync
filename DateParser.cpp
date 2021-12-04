@@ -13,7 +13,6 @@ bool DateParser::fromJPGBuffer(const QByteArray & buffer, Date & date)
     bool dateFound = false;
     easyexif::EXIFInfo exifInfo;
     int parsingResult = exifInfo.parseFrom((const unsigned char *)buffer.constData(), buffer.size());
-    if (parsingResult == PARSE_EXIF_SUCCESS) {
     if (parsingResult == PARSE_EXIF_SUCCESS && exifInfo.DateTime.size() >= 7) {
         date.m_year = std::stoi(exifInfo.DateTime.substr(0, 4));
         date.m_month = std::stoi(exifInfo.DateTime.substr(5, 2));
@@ -42,7 +41,7 @@ static int read_packet(void *opaque, uint8_t *buf, int buf_size)
     return buf_size;
 }
 
-bool DateParser::fromMPRBuffer(const QByteArray & buffer, Date & date)
+bool DateParser::fromMP4Buffer(const QByteArray & buffer, Date & date)
 {
     bool dateFound = false;
     AVFormatContext *fmt_ctx = NULL;

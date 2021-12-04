@@ -133,7 +133,7 @@ bool FileManager::getDate(const EFS::FileInfo &fileInfo, Date &date)
     else if (fileInfo.suffix().compare("mp4", Qt::CaseInsensitive) == 0) {
         EFS::File file(fileInfo.path());
         if (file.open(QIODevice::ReadOnly)) {
-            DateParser::fromMPRBuffer(file.readAll(), date);
+            DateParser::fromMP4Buffer(file.readAll(), date);
             file.close();
             isParsed = true;
         }
