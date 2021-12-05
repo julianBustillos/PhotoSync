@@ -6,7 +6,7 @@
 
 
 FileManager::FileManager(QObject *parent) :
-    QThread(parent), m_importPath(""), m_exportPath(""), m_extensions({ "*.jpg" , "*.jpeg", "*.png", " *.mp4" }), m_cancelled(false), m_status(false), m_removeFiles(false),
+    QThread(parent), m_importPath(""), m_exportPath(""), m_extensions({ "*.jpg" , "*.jpeg", "*.png", "*.mp4" }), m_cancelled(false), m_status(false), m_removeFiles(false),
     m_runCount(0), m_progress(0), m_copyProgress(0), m_removeProgress(0), m_duplicateCount(0), m_copyCount(0), m_removeCount(0)
 {
 }
