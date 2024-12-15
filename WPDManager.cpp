@@ -413,10 +413,10 @@ HRESULT WPDManager::createDeviceData(const QString & deviceID)
             DeviceData *deviceData = new DeviceData(friendlyName, device, content, properties, resources);
             if (deviceData) {
                 startWriting();
-                auto &deviceIter = m_deviceMap.emplace(friendlyName, deviceData);
-                auto &deviceIDIter = m_deviceIDMap.emplace(deviceID, friendlyName);
+                auto deviceIter = m_deviceMap.emplace(friendlyName, deviceData);
+                auto deviceIDIter = m_deviceIDMap.emplace(deviceID, friendlyName);
                 if (deviceIter.second && deviceIDIter.second && deviceData->m_rootNode) {
-                    auto &mapIter = deviceData->m_objectIDMap.emplace(deviceData->m_rootNode->m_objectID, deviceData->m_rootNode);
+                    auto mapIter = deviceData->m_objectIDMap.emplace(deviceData->m_rootNode->m_objectID, deviceData->m_rootNode);
                     hr = mapIter.second ? S_OK : E_FAIL;
                 }
                 endWriting();
@@ -634,7 +634,7 @@ bool WPDManager::fetchData(const DeviceData &device, DeviceNode &node)
 WPDManager::DeviceData * WPDManager::findDevice(const QString & path)
 {
     DeviceData *device = nullptr;
-    auto &deviceIter = m_deviceMap.find(path.split('/')[0]);
+    auto deviceIter = m_deviceMap.find(path.split('/')[0]);
     if (deviceIter != m_deviceMap.end())
         device = deviceIter->second;
 
@@ -682,14 +682,14 @@ void WPDManager::refreshDevices()
 void WPDManager::removeDevice(const QString & deviceID)
 {
     startWriting();
-    auto &deviceIDIter = m_deviceIDMap.find(deviceID);
+    auto deviceIDIter = m_deviceIDMap.find(deviceID);
     if (deviceIDIter == m_deviceIDMap.end())
         return;
 
     QString deviceName = deviceIDIter->second;
     m_deviceIDMap.erase(deviceIDIter);
 
-    auto &deviceIter = m_deviceMap.find(deviceName);
+    auto deviceIter = m_deviceMap.find(deviceName);
     if (deviceIter != m_deviceMap.end()) {
         DeviceData *deviceToRemove = nullptr;
 
@@ -724,14 +724,14 @@ void WPDManager::addObject(const QString & deviceID, const QString &parentID, co
     QString path;
 
     startWriting();
-    auto &deviceIDIter = m_deviceIDMap.find(deviceID);
+    auto deviceIDIter = m_deviceIDMap.find(deviceID);
     if (deviceIDIter == m_deviceIDMap.end())
         return;
 
     QString deviceName = deviceIDIter->second;
     DeviceData *device = findDevice(deviceName);
     if (device) {
-        auto &parentIter = device->m_objectIDMap.find(parentID);
+        auto parentIter = device->m_objectIDMap.find(parentID);
         if (parentIter != device->m_objectIDMap.end()) {
             DeviceNode *parent = parentIter->second;
             if (parent) {
@@ -758,7 +758,7 @@ void WPDManager::updateObject(const QString & deviceID, const QString& objectID)
     QString oldPath;
 
     startWriting();
-    auto &deviceIDIter = m_deviceIDMap.find(deviceID);
+    auto deviceIDIter = m_deviceIDMap.find(deviceID);
     if (deviceIDIter == m_deviceIDMap.end()) {
         endWriting();
         return;
@@ -767,7 +767,7 @@ void WPDManager::updateObject(const QString & deviceID, const QString& objectID)
     QString deviceName = deviceIDIter->second;
     DeviceData *device = findDevice(deviceName);
     if (device) {
-        auto &objectIter = device->m_objectIDMap.find(objectID);
+        auto objectIter = device->m_objectIDMap.find(objectID);
         if (objectIter != device->m_objectIDMap.end()) {
             DeviceNode *node = objectIter->second;
             if (node) {
@@ -799,7 +799,7 @@ void WPDManager::removeObject(const QString & deviceID, const QString& objectID)
     QString path;
 
     startWriting();
-    auto &deviceIDIter = m_deviceIDMap.find(deviceID);
+    auto deviceIDIter = m_deviceIDMap.find(deviceID);
     if (deviceIDIter == m_deviceIDMap.end()) {
         endWriting();
         return;
@@ -808,7 +808,7 @@ void WPDManager::removeObject(const QString & deviceID, const QString& objectID)
     QString deviceName = deviceIDIter->second;
     DeviceData *device = findDevice(deviceName);
     if (device) {
-        auto &objectIter = device->m_objectIDMap.find(objectID);
+        auto objectIter = device->m_objectIDMap.find(objectID);
         if (objectIter != device->m_objectIDMap.end()) {
             DeviceNode *node = objectIter->second;
             if (node) {
